@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Verifikasi — Kalibrasi Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f2f4f7; --white:#ffffff; --ink:#1c2333; --ink-soft:#6d7688; --line:#e6e9ef;
+    --blue:#3b77d7; --blue-dark:#2c5eb0; --blue-tint:#e9f0fb;
+    --green:#15a45a; --green-tint:#e5f7ec;
+    --red:#e6483a; --red-tint:#fdeceb;
+    --amber:#c97e1c; --amber-tint:#fdf3e6;
+    --r-lg:24px; --r-md:16px; --r-sm:11px;
+    --shadow:0 10px 30px rgba(28,35,51,.07);
+    --ease:cubic-bezier(.5,0,.15,1);
+  }
+  *{box-sizing:border-box}
+  html{scroll-padding-top:env(safe-area-inset-top,0px)}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Manrope',system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+    padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);}
+  .num{font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums}
+  button{font-family:inherit; cursor:pointer; border:none}
+  input,textarea{font-family:inherit}
+
+  .topbar{max-width:760px;margin:0 auto;padding:22px 20px 14px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px}
+  .brand-mark{width:30px;height:30px;border-radius:9px;background:var(--blue-dark);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px}
+  .brand-sub{font-size:12px;color:var(--ink-soft);font-weight:600}
+
+  .whoami{display:flex;gap:8px;width:100%;max-width:340px}
+  .whoami input{flex:1;border:1px solid var(--line);background:var(--white);border-radius:999px;padding:9px 15px;font-size:12.5px}
+  .whoami input:focus{outline:none;border-color:var(--blue)}
+
+  .pillnav{position:relative;display:inline-flex;background:var(--white);border:1px solid var(--line);border-radius:999px;padding:4px;gap:2px;box-shadow:var(--shadow);max-width:100%;overflow-x:auto}
+  .pill{position:relative;z-index:2;background:transparent;padding:9px 15px;border-radius:999px;font-size:12.5px;font-weight:700;color:var(--ink-soft);transition:color .35s var(--ease);white-space:nowrap}
+  .pill.active{color:#fff}
+  .pill-indicator{position:absolute;top:4px;bottom:4px;left:4px;z-index:1;border-radius:999px;background:var(--blue-dark);transition:transform .38s var(--ease),width .38s var(--ease)}
+
+  main{max-width:760px;margin:0 auto;padding:6px 16px 60px}
+  .view{display:none;opacity:0;transform:translateY(6px);transition:opacity .3s var(--ease),transform .3s var(--ease)}
+  .view.active{display:block;opacity:1;transform:none}
+
+  .resultcard{background:var(--white);border:1px solid var(--line);border-radius:var(--r-md);padding:15px 18px;margin-bottom:10px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;transition:border-color .2s var(--ease),transform .2s var(--ease)}
+  .resultcard:hover{border-color:var(--blue);transform:translateX(2px)}
+  .resultcard .rc-name{font-weight:700;font-size:14px}
+  .resultcard .rc-sub{font-size:12px;color:var(--ink-soft);margin-top:2px}
+  .badge{padding:5px 11px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}
+  .badge-laik{background:var(--green-tint);color:var(--green)}
+  .badge-tidak{background:var(--red-tint);color:var(--red)}
+  .badge-proses{background:var(--blue-tint);color:var(--blue-dark)}
+  .badge-baik{background:var(--green-tint);color:var(--green)}
+  .badge-buruk{background:var(--red-tint);color:var(--red)}
+  .empty{text-align:center;color:var(--ink-soft);font-size:13px;padding:40px 0}
+
+  .backbtn{display:inline-flex;align-items:center;gap:6px;background:var(--white);border:1px solid var(--line);border-radius:999px;padding:9px 16px;font-size:12.5px;font-weight:700;color:var(--ink-soft);margin-bottom:14px}
+
+  .detailhead{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px 22px;margin-bottom:14px}
+  .detailhead h2{margin:0 0 2px;font-size:19px}
+  .detailhead .sub{font-size:13px;color:var(--ink-soft);margin-bottom:12px}
+  .kv{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;font-size:13px;margin-top:14px}
+  .kv div b{display:block;font-size:10px;text-transform:uppercase;color:var(--ink-soft);font-weight:700;margin-bottom:2px}
+  @media(max-width:560px){.kv{grid-template-columns:1fr}}
+
+  .section{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px 22px;margin-bottom:14px}
+  .section h3{margin:0 0 14px;font-size:14px;font-weight:800;color:var(--blue-dark)}
+
+  .fisikgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px}
+  @media(max-width:560px){.fisikgrid{grid-template-columns:1fr}}
+  .fisikitem{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+  .fisikitem:last-child{border-bottom:none}
+
+  .mtable{width:100%;border-collapse:collapse;font-size:12.5px}
+  .mtable th{text-align:left;color:var(--ink-soft);font-size:10px;text-transform:uppercase;padding:7px 6px;border-bottom:1px solid var(--line)}
+  .mtable td{padding:8px 6px;border-bottom:1px solid var(--line)}
+  .mtable tr:last-child td{border-bottom:none}
+
+  .field label{display:block;font-size:11px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em}
+  .field textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:var(--r-sm);padding:11px 12px;font-size:13.5px;min-height:70px;resize:vertical}
+  .field textarea:focus{outline:none;border-color:var(--blue);background:#fff}
+
+  .actions{display:flex;gap:12px;margin-top:4px}
+  .btn{flex:1;padding:15px;border-radius:var(--r-md);font-size:14.5px;font-weight:800;transition:transform .15s var(--ease),filter .15s var(--ease)}
+  .btn:active{transform:scale(.97)}
+  .btn-save{background:var(--green);color:#fff}
+  .btn-save:hover{filter:brightness(1.06)}
+  .btn-cancel{background:var(--red-tint);color:var(--red)}
+  .btn-cancel:hover{filter:brightness(.97)}
+
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);z-index:60;background:var(--ink);color:#fff;
+    padding:13px 22px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .3s var(--ease)}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="brand-mark">✓</span> Verifikasi Kalibrasi</div>
+  <div class="brand-sub">Cek data, sahkan hasil, atau kembalikan ke operator</div>
+  <div class="whoami"><input id="namaVerifikator" placeholder="Nama Anda (untuk pengesahan)"></div>
+  <nav class="pillnav" id="pillnav">
+    <span class="pill-indicator" id="pillIndicator"></span>
+    <button class="pill active" data-status="Diajukan">Diajukan</button>
+    <button class="pill" data-status="Tersahkan">Tersahkan</button>
+    <button class="pill" data-status="Dikembalikan">Dikembalikan</button>
+    <button class="pill" data-status="">Semua</button>
+  </nav>
+</div>
+
+<main>
+  <section class="view active" id="view-list">
+    <div id="listResults"><p class="empty">Memuat…</p></div>
+  </section>
+
+  <section class="view" id="view-detail"></section>
+</main>
+
+<div id="toast"></div>
+
+<script>
+const API_BASE = 'https://script.google.com/macros/s/AKfycby-LcxnGqEaA203sl3pIEPMsG2X0PBZIWJYCEIaxd5EISGp2YirfkAe6Jr1t5oYUynAVQ/exec';
+const MODEL_LABEL = { PO: 'Oximeter', BPM: 'Tensimeter' };
+
+const namaInput = document.getElementById('namaVerifikator');
+namaInput.value = localStorage.getItem('nama_verifikator') || '';
+namaInput.addEventListener('input', () => localStorage.setItem('nama_verifikator', namaInput.value));
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+async function apiGet(action, params){
+  const qs = new URLSearchParams({ action, ...params }).toString();
+  const res = await fetch(API_BASE + '?' + qs);
+  return res.json();
+}
+async function apiPost(body){
+  const res = await fetch(API_BASE, { method: 'POST', body: JSON.stringify(body) });
+  return res.json();
+}
+
+/* ---------- Pill filter ---------- */
+const pillnav = document.getElementById('pillnav');
+const indicator = document.getElementById('pillIndicator');
+function moveIndicator(btn){
+  indicator.style.width = btn.offsetWidth + 'px';
+  indicator.style.transform = 'translateX(' + btn.offsetLeft + 'px)';
+}
+pillnav.addEventListener('click', e => {
+  const btn = e.target.closest('.pill'); if(!btn) return;
+  pillnav.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p === btn));
+  moveIndicator(btn);
+  showList();
+  loadList(btn.dataset.status);
+});
+window.addEventListener('load', () => { moveIndicator(pillnav.querySelector('.pill.active')); loadList('Diajukan'); });
+window.addEventListener('resize', () => moveIndicator(pillnav.querySelector('.pill.active')));
+
+function showList(){
+  document.getElementById('view-list').classList.add('active');
+  document.getElementById('view-detail').classList.remove('active');
+}
+function showDetail(){
+  document.getElementById('view-list').classList.remove('active');
+  document.getElementById('view-detail').classList.add('active');
+}
+
+/* ---------- List ---------- */
+async function loadList(status){
+  const box = document.getElementById('listResults');
+  box.innerHTML = '<p class="empty">Memuat…</p>';
+  try{
+    const rows = await apiGet('search', { status: status || '' });
+    if (!rows.length){ box.innerHTML = '<p class="empty">Tidak ada job dengan status ini.</p>'; return; }
+    box.innerHTML = rows.map(r => `
+      <div class="resultcard" data-job="${r.job_id}">
+        <div>
+          <div class="rc-name">${r.nama_pelanggan || '(tanpa nama)'}</div>
+          <div class="rc-sub">${r.job_id} · ${MODEL_LABEL[r.model_id] || r.model_id} · ${r.no_seri || '-'}</div>
+        </div>
+        ${badgeFor(r)}
+      </div>`).join('');
+    box.querySelectorAll('[data-job]').forEach(el => el.addEventListener('click', () => openDetail(el.dataset.job)));
+  }catch(err){ box.innerHTML = '<p class="empty">Tidak bisa terhubung ke server.</p>'; }
+}
+
+function badgeFor(r){
+  if (r.hasil_akhir === 'LAIK') return '<span class="badge badge-laik">LAIK</span>';
+  if (r.hasil_akhir === 'TIDAK LAIK') return '<span class="badge badge-tidak">TIDAK LAIK</span>';
+  return `<span class="badge badge-proses">${r.status}</span>`;
+}
+
+/* ---------- Detail ---------- */
+async function openDetail(jobId){
+  showDetail();
+  const root = document.getElementById('view-detail');
+  root.innerHTML = '<p class="empty">Memuat…</p>';
+  const d = await apiGet('jobDetail', { job_id: jobId });
+  if (d.error){ root.innerHTML = '<p class="empty">' + d.error + '</p>'; return; }
+  const j = d.job;
+
+  root.innerHTML = `
+    <button class="backbtn" id="btnBack">← Kembali ke daftar</button>
+
+    <div class="detailhead">
+      <h2>${j.nama_pelanggan}</h2>
+      <div class="sub">${j.job_id} · ${MODEL_LABEL[j.model_id] || j.model_id} · Status: <b>${j.status}</b></div>
+      ${badgeFor(j)}
+      <div class="kv">
+        <div><b>Alamat</b>${j.alamat_pelanggan || '-'}</div>
+        <div><b>Merk / Tipe</b>${j.merk || '-'} / ${j.tipe_model_alat || '-'}</div>
+        <div><b>No. Seri</b>${j.no_seri || '-'}</div>
+        <div><b>Resolusi</b>${j.resolusi}</div>
+        <div><b>Suhu</b>${j.suhu_awal}°C → ${j.suhu_akhir}°C</div>
+        <div><b>RH</b>${j.rh_awal}% → ${j.rh_akhir}%</div>
+        <div><b>Diinput oleh</b>${j.diinput_oleh || '-'}</div>
+        <div><b>Tanggal input</b>${j.tanggal_input ? new Date(j.tanggal_input).toLocaleString('id-ID') : '-'}</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Fisik dan Komponen</h3>
+      <div class="fisikgrid">
+        ${d.fisik.map(f => `
+          <div class="fisikitem">
+            <span>${f.bagian_alat}</span>
+            <span class="badge ${f.fisik === 'Baik' ? 'badge-baik' : 'badge-buruk'}">${f.fisik}</span>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Hasil Pengukuran</h3>
+      <table class="mtable">
+        <tr><th>Titik</th><th>Setting</th><th>Rata²</th><th>Koreksi</th><th>U</th><th>Toleransi</th><th>Status</th></tr>
+        ${d.hasil.map(h => `<tr>
+          <td>${h.sub_parameter} #${h.urutan_titik}</td>
+          <td class="num">${h.nilai_setting}</td>
+          <td class="num">${h.rata_rata_pembacaan}</td>
+          <td class="num">${h.koreksi}</td>
+          <td class="num">${h.ketidakpastian_U}</td>
+          <td class="num">${h.nilai_penyimpangan_diizinkan}</td>
+          <td><span class="badge ${h.status_titik === 'Baik' ? 'badge-baik' : 'badge-buruk'}">${h.status_titik}</span></td>
+        </tr>`).join('')}
+      </table>
+    </div>
+
+    ${j.status === 'Diajukan' ? `
+    <div class="section">
+      <h3>Catatan</h3>
+      <div class="field">
+        <label>Catatan (wajib diisi kalau dikembalikan)</label>
+        <textarea id="catatanVerif" placeholder="Contoh: titik ke-3 sepertinya salah input, tolong cek ulang…"></textarea>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-cancel" id="btnKembalikan">Kembalikan ke Operator</button>
+      <button class="btn btn-save" id="btnSahkan">Sahkan Data</button>
+    </div>
+    ` : `<div class="section"><h3>Catatan Verifikator</h3><p style="font-size:13px">${j.catatan_verifikator || '(tidak ada catatan)'}</p></div>`}
+  `;
+
+  document.getElementById('btnBack').addEventListener('click', () => { showList(); loadList(pillnav.querySelector('.pill.active').dataset.status); });
+
+  const btnSahkan = document.getElementById('btnSahkan');
+  const btnKembalikan = document.getElementById('btnKembalikan');
+  if (btnSahkan){
+    btnSahkan.addEventListener('click', async () => {
+      if (!namaInput.value){ toast('Isi nama Anda dulu di atas.'); return; }
+      toast('Menyimpan…');
+      const res = await apiPost({ action:'sahkanJob', job_id:jobId, disahkan_oleh:namaInput.value, catatan:document.getElementById('catatanVerif').value });
+      if (res.error){ toast('Gagal: ' + res.error); return; }
+      toast('Job disahkan.');
+      showList(); loadList(pillnav.querySelector('.pill.active').dataset.status);
+    });
+  }
+  if (btnKembalikan){
+    btnKembalikan.addEventListener('click', async () => {
+      const catatan = document.getElementById('catatanVerif').value;
+      if (!catatan){ toast('Catatan wajib diisi kalau mengembalikan job.'); return; }
+      if (!namaInput.value){ toast('Isi nama Anda dulu di atas.'); return; }
+      toast('Menyimpan…');
+      const res = await apiPost({ action:'kembalikanJob', job_id:jobId, oleh:namaInput.value, catatan });
+      if (res.error){ toast('Gagal: ' + res.error); return; }
+      toast('Job dikembalikan ke operator.');
+      showList(); loadList(pillnav.querySelector('.pill.active').dataset.status);
+    });
+  }
+}
+</script>
+</body>
+</html>
