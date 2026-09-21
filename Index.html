@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kalibrasi Lab — PT Sinko Prima Alloy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f2f4f7;
+    --white:#ffffff;
+    --ink:#1c2333;
+    --ink-soft:#6d7688;
+    --line:#e6e9ef;
+    --blue:#3b77d7;
+    --blue-dark:#2c5eb0;
+    --blue-tint:#e9f0fb;
+    --green:#15a45a;
+    --green-tint:#e5f7ec;
+    --red:#e6483a;
+    --red-tint:#fdeceb;
+    --r-lg:24px;
+    --r-md:16px;
+    --r-sm:11px;
+    --shadow:0 10px 30px rgba(28,35,51,.07);
+    --ease:cubic-bezier(.5,0,.15,1);
+  }
+  *{box-sizing:border-box}
+  html{scroll-padding-top:env(safe-area-inset-top,0px)}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Manrope',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .num{font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums;}
+  button{font-family:inherit; cursor:pointer; border:none}
+  input,select{font-family:inherit}
+
+  /* ---------- Topbar ---------- */
+  .topbar{
+    max-width:920px; margin:0 auto; padding:22px 20px 14px;
+    display:flex; flex-direction:column; align-items:center; gap:16px; text-align:center;
+  }
+  .brand{display:flex; align-items:center; gap:9px; font-weight:800; font-size:15px; letter-spacing:.2px}
+  .brand-mark{
+    width:30px; height:30px; border-radius:9px; background:var(--blue);
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px;
+  }
+  .pillnav{
+    position:relative; display:inline-flex; background:var(--white); border:1px solid var(--line);
+    border-radius:999px; padding:4px; gap:2px; box-shadow:var(--shadow); max-width:100%; overflow-x:auto;
+  }
+  .pill{
+    position:relative; z-index:2; background:transparent; padding:9px 16px; border-radius:999px;
+    font-size:13.5px; font-weight:700; color:var(--ink-soft); transition:color .35s var(--ease); white-space:nowrap;
+  }
+  .pill.active{color:#fff}
+  .pill-indicator{
+    position:absolute; top:4px; bottom:4px; left:4px; z-index:1; border-radius:999px;
+    background:var(--blue); transition:transform .38s var(--ease), width .38s var(--ease);
+  }
+
+  /* ---------- Layout ---------- */
+  main{max-width:920px; margin:0 auto; padding:6px 16px 60px}
+  .view{display:none; opacity:0; transform:translateY(6px); transition:opacity .3s var(--ease), transform .3s var(--ease)}
+  .view.active{display:block; opacity:1; transform:none}
+
+  /* ---------- Beranda ---------- */
+  .hero{
+    background:linear-gradient(135deg,var(--blue) 0%, var(--blue-dark) 100%);
+    color:#fff; border-radius:var(--r-lg); padding:30px 28px; margin-bottom:18px;
+    position:relative; overflow:hidden;
+  }
+  .hero::after{
+    content:""; position:absolute; right:-60px; top:-60px; width:220px; height:220px;
+    border-radius:50%; background:rgba(255,255,255,.08);
+  }
+  .hero-eyebrow{font-size:12px; font-weight:700; opacity:.85; text-transform:uppercase; letter-spacing:.08em}
+  .hero h1{font-size:27px; margin:8px 0 6px; font-weight:800; line-height:1.25}
+  .hero p{margin:0; opacity:.88; font-size:14px; max-width:480px}
+
+  .cardgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:18px}
+  @media(max-width:640px){.cardgrid{grid-template-columns:1fr 1fr}}
+  .feature{
+    background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); padding:18px;
+    text-align:left; transition:transform .25s var(--ease), box-shadow .25s var(--ease), border-color .25s var(--ease);
+  }
+  .feature:hover{transform:translateY(-3px); box-shadow:var(--shadow); border-color:var(--blue)}
+  .feature-icon{
+    width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center;
+    font-size:17px; margin-bottom:12px;
+  }
+  .feature h3{margin:0 0 4px; font-size:15px}
+  .feature p{margin:0; font-size:12.5px; color:var(--ink-soft); line-height:1.4}
+  .feature .go{display:inline-block; margin-top:10px; font-size:12.5px; font-weight:700; color:var(--blue)}
+
+  .statcard{
+    background:var(--white); border:1px solid var(--line); border-radius:var(--r-md); padding:18px 20px;
+  }
+  .statcard h4{margin:0 0 14px; font-size:13.5px; color:var(--ink-soft); font-weight:700}
+  .statrow{display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:10px}
+  .stat{border:1px solid var(--line); border-radius:var(--r-sm); padding:12px 10px; text-align:center}
+  .stat b{display:block; font-size:22px; margin-bottom:2px}
+  .stat span{font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em}
+
+  /* ---------- Form ---------- */
+  .formhead{
+    background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg);
+    padding:18px 22px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  .formhead h2{margin:0; font-size:18px}
+  .formhead p{margin:2px 0 0; font-size:12.5px; color:var(--ink-soft)}
+  .btn-reset{background:var(--bg); color:var(--ink-soft); font-size:12.5px; font-weight:700; padding:9px 14px; border-radius:999px}
+
+  .section{
+    background:var(--white); border:1px solid var(--line); border-radius:var(--r-lg);
+    padding:20px 22px; margin-bottom:14px;
+  }
+  .section h3{margin:0 0 16px; font-size:14px; font-weight:800; color:var(--blue-dark)}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .grid4{display:grid; grid-template-columns:repeat(4,1fr); gap:14px}
+  @media(max-width:640px){.grid2,.grid4{grid-template-columns:1fr 1fr}}
+  .field label{display:block; font-size:11px; font-weight:700; color:var(--ink-soft); margin-bottom:6px; text-transform:uppercase; letter-spacing:.03em}
+  .field input, .field select{
+    width:100%; border:1px solid var(--line); background:var(--bg); border-radius:var(--r-sm);
+    padding:10px 12px; font-size:13.5px; color:var(--ink); transition:border-color .2s var(--ease), background .2s var(--ease);
+  }
+  .field input:focus, .field select:focus{outline:none; border-color:var(--blue); background:#fff}
+  .field.readonly input{background:transparent; border-style:dashed; color:var(--ink-soft)}
+
+  .fisiklist{display:grid; grid-template-columns:1fr 1fr; gap:10px 20px}
+  @media(max-width:640px){.fisiklist{grid-template-columns:1fr}}
+  .fisikrow{display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line)}
+  .fisikrow:last-child{border-bottom:none}
+  .fisikrow .lbl{font-size:13px; font-weight:600}
+  .toggle2{display:flex; background:var(--bg); border-radius:999px; padding:3px; gap:2px}
+  .toggle2 button{padding:6px 13px; border-radius:999px; font-size:11.5px; font-weight:700; color:var(--ink-soft); transition:all .2s var(--ease)}
+  .toggle2 button.on-baik.sel{background:var(--green); color:#fff}
+  .toggle2 button.on-tidak.sel{background:var(--red); color:#fff}
+
+  .measblock{margin-bottom:16px}
+  .measblock:last-child{margin-bottom:0}
+  .measblock-title{font-size:12.5px; font-weight:800; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; margin-bottom:10px}
+  .measrow{display:grid; grid-template-columns:70px 1fr 70px; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line)}
+  .measrow:last-child{border-bottom:none}
+  .measrow .setting{font-size:15px; font-weight:800; color:var(--blue-dark)}
+  .measrow .setting small{display:block; font-size:9.5px; font-weight:600; color:var(--ink-soft); text-transform:uppercase}
+  .measrow input{
+    width:100%; border:1px solid var(--line); background:var(--bg); border-radius:var(--r-sm);
+    padding:9px 10px; font-size:14px; text-align:center; font-weight:700;
+  }
+  .measrow input:focus{outline:none; border-color:var(--blue); background:#fff}
+  .measrow .avg{font-size:14px; font-weight:800; text-align:right; color:var(--ink)}
+  .measrow .avg small{display:block; font-size:9px; font-weight:600; color:var(--ink-soft)}
+
+  .tabs{display:flex; justify-content:center; gap:6px; margin-top:12px}
+  .tabs button{
+    width:30px; height:30px; border-radius:9px; background:var(--bg); font-size:12px; font-weight:800; color:var(--ink-soft);
+    transition:all .25s var(--ease);
+  }
+  .tabs button.active{background:var(--blue); color:#fff; transform:scale(1.08)}
+
+  .actions{display:flex; gap:12px; margin-top:4px}
+  .btn{flex:1; padding:15px; border-radius:var(--r-md); font-size:14.5px; font-weight:800; transition:transform .15s var(--ease), filter .15s var(--ease)}
+  .btn:active{transform:scale(.97)}
+  .btn-save{background:var(--green); color:#fff}
+  .btn-save:hover{filter:brightness(1.06)}
+  .btn-cancel{background:var(--red-tint); color:var(--red)}
+  .btn-cancel:hover{filter:brightness(.97)}
+
+  /* ---------- Cari ---------- */
+  .searchbar{display:flex; gap:10px; margin-bottom:14px}
+  .searchbar input{
+    flex:1; border:1px solid var(--line); background:var(--white); border-radius:999px;
+    padding:13px 18px; font-size:14px;
+  }
+  .searchbar input:focus{outline:none; border-color:var(--blue)}
+  .resultcard{
+    background:var(--white); border:1px solid var(--line); border-radius:var(--r-md);
+    padding:15px 18px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+    transition:border-color .2s var(--ease), transform .2s var(--ease);
+  }
+  .resultcard:hover{border-color:var(--blue); transform:translateX(2px)}
+  .resultcard .rc-name{font-weight:700; font-size:14px}
+  .resultcard .rc-sub{font-size:12px; color:var(--ink-soft); margin-top:2px}
+  .badge{padding:5px 11px; border-radius:999px; font-size:11px; font-weight:800; white-space:nowrap}
+  .badge-laik{background:var(--green-tint); color:var(--green)}
+  .badge-tidak{background:var(--red-tint); color:var(--red)}
+  .badge-proses{background:var(--blue-tint); color:var(--blue-dark)}
+  .empty{text-align:center; color:var(--ink-soft); font-size:13px; padding:40px 0}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(20,26,40,.45); display:flex; align-items:flex-end; justify-content:center;
+    z-index:50; opacity:0; pointer-events:none; transition:opacity .25s var(--ease);
+  }
+  .modal-overlay.show{opacity:1; pointer-events:auto}
+  @media(min-width:640px){.modal-overlay{align-items:center}}
+  .modal{
+    background:#fff; width:100%; max-width:560px; max-height:88vh; overflow-y:auto;
+    border-radius:24px 24px 0 0; padding:24px; transform:translateY(30px); transition:transform .3s var(--ease);
+  }
+  @media(min-width:640px){.modal{border-radius:24px}}
+  .modal-overlay.show .modal{transform:translateY(0)}
+  .modal-close{float:right; background:var(--bg); width:32px; height:32px; border-radius:50%; font-size:15px; color:var(--ink-soft)}
+  .mtable{width:100%; border-collapse:collapse; margin-top:12px; font-size:12.5px}
+  .mtable th{text-align:left; color:var(--ink-soft); font-size:10.5px; text-transform:uppercase; padding:6px 8px; border-bottom:1px solid var(--line)}
+  .mtable td{padding:7px 8px; border-bottom:1px solid var(--line)}
+
+  #toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); z-index:60;
+    background:var(--ink); color:#fff; padding:13px 22px; border-radius:999px; font-size:13px; font-weight:600;
+    opacity:0; pointer-events:none; transition:all .3s var(--ease);
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="brand-mark">⎈</span> Kalibrasi Lab</div>
+  <nav class="pillnav" id="pillnav">
+    <span class="pill-indicator" id="pillIndicator"></span>
+    <button class="pill active" data-view="beranda">Beranda</button>
+    <button class="pill" data-view="oximeter">Oximeter</button>
+    <button class="pill" data-view="tensi">Tensimeter</button>
+    <button class="pill" data-view="cari">Cari</button>
+  </nav>
+</div>
+
+<main>
+
+  <!-- ===== BERANDA ===== -->
+  <section class="view active" id="view-beranda">
+    <div class="hero">
+      <div class="hero-eyebrow">Laboratorium Kalibrasi</div>
+      <h1>Isi lembar kerja langsung dari lapangan.</h1>
+      <p>Pilih jenis alat, masukkan hasil pengukuran, sistem menghitung koreksi dan ketidakpastian otomatis.</p>
+    </div>
+    <div class="cardgrid">
+      <button class="feature" data-goto="oximeter" style="text-align:left">
+        <div class="feature-icon" style="background:var(--blue-tint); color:var(--blue-dark)">◔</div>
+        <h3>Oximeter</h3>
+        <p>SpO2 &amp; Heart Rate, isi hasil kalibrasi pulse oximeter.</p>
+        <span class="go">Mulai →</span>
+      </button>
+      <button class="feature" data-goto="tensi" style="text-align:left">
+        <div class="feature-icon" style="background:var(--green-tint); color:var(--green)">◑</div>
+        <h3>Tensimeter</h3>
+        <p>Systole, MAP, Diastole — kalibrasi blood pressure monitor.</p>
+        <span class="go">Mulai →</span>
+      </button>
+      <button class="feature" data-goto="cari" style="text-align:left">
+        <div class="feature-icon" style="background:#fdf3e6; color:#c97e1c">⌕</div>
+        <h3>Cari Riwayat</h3>
+        <p>Lihat status &amp; hasil pekerjaan yang sudah diinput.</p>
+        <span class="go">Buka →</span>
+      </button>
+    </div>
+    <div class="statcard">
+      <h4>Ringkasan Kalibrasi</h4>
+      <div class="statrow" id="statrow">
+        <div class="stat"><b class="num">—</b><span>Total</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FORM OXIMETER ===== -->
+  <section class="view" id="view-oximeter"></section>
+
+  <!-- ===== FORM TENSI ===== -->
+  <section class="view" id="view-tensi"></section>
+
+  <!-- ===== CARI ===== -->
+  <section class="view" id="view-cari">
+    <div class="searchbar">
+      <input type="text" id="searchInput" placeholder="Cari nama pelanggan, no. seri, atau no. job…">
+    </div>
+    <div id="searchResults"></div>
+  </section>
+
+</main>
+
+<div id="toast"></div>
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+/* ============ KONFIGURASI ============ */
+const API_BASE = 'https://script.google.com/macros/s/AKfycby-LcxnGqEaA203sl3pIEPMsG2X0PBZIWJYCEIaxd5EISGp2YirfkAe6Jr1t5oYUynAVQ/exec';
+
+const FISIK_ITEMS = [
+  'Badan dan permukaan alat',
+  'Kabel / probe / sensor',
+  'Tombol, saklar, kontrol',
+  'Tampilan dan indikator',
+  'Kelengkapan alat'
+];
+
+const MODEL_LABEL = { PO: 'Oximeter', BPM: 'Tensimeter' };
+
+/* ============ NAV & VIEW SWITCH ============ */
+const pillnav = document.getElementById('pillnav');
+const indicator = document.getElementById('pillIndicator');
+let currentView = 'beranda';
+
+function moveIndicator(btn){
+  indicator.style.width = btn.offsetWidth + 'px';
+  indicator.style.transform = 'translateX(' + btn.offsetLeft + 'px)';
+}
+
+function showView(name){
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.dataset.view === name));
+  const activeBtn = pillnav.querySelector('.pill[data-view="' + name + '"]');
+  moveIndicator(activeBtn);
+  currentView = name;
+  if (name === 'beranda') loadDashboard();
+  if (name === 'oximeter' && !formState.PO.loaded) loadForm('PO', 'view-oximeter');
+  if (name === 'tensi' && !formState.BPM.loaded) loadForm('BPM', 'view-tensi');
+  if (name === 'cari') loadSearch('');
+}
+
+pillnav.addEventListener('click', e => {
+  const btn = e.target.closest('.pill');
+  if (btn) showView(btn.dataset.view);
+});
+document.querySelectorAll('[data-goto]').forEach(el => el.addEventListener('click', () => showView(el.dataset.goto)));
+window.addEventListener('resize', () => moveIndicator(pillnav.querySelector('.pill.active')));
+window.addEventListener('load', () => { moveIndicator(pillnav.querySelector('.pill.active')); loadDashboard(); });
+
+/* ============ TOAST ============ */
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+/* ============ API HELPERS ============ */
+async function apiGet(action, params){
+  const qs = new URLSearchParams({ action, ...params }).toString();
+  const res = await fetch(API_BASE + '?' + qs);
+  return res.json();
+}
+async function apiPost(body){
+  const res = await fetch(API_BASE, { method: 'POST', body: JSON.stringify(body) });
+  return res.json();
+}
+
+/* ============ DASHBOARD ============ */
+async function loadDashboard(){
+  try{
+    const d = await apiGet('dashboard', {});
+    const rows = [
+      ['Total', d.total, ''],
+      ['Diajukan', d.perStatus.Diajukan || 0, ''],
+      ['Tersahkan', d.perStatus.Tersahkan || 0, 'color:var(--blue-dark)'],
+      ['Terbit', d.perStatus.Terbit || 0, ''],
+      ['Oximeter', d.perModel.PO || 0, ''],
+      ['Tensimeter', d.perModel.BPM || 0, '']
+    ];
+    document.getElementById('statrow').innerHTML = rows.map(r =>
+      `<div class="stat"><b class="num" style="${r[2]}">${r[1]}</b><span>${r[0]}</span></div>`
+    ).join('');
+  }catch(err){ /* diam saja kalau API belum di-deploy, tetap tampilkan UI kosong */ }
+}
+
+/* ============ FORM STATE ============ */
+const formState = {
+  PO: { loaded:false, config:null, data:{}, activeTab:{}, header:{} },
+  BPM:{ loaded:false, config:null, data:{}, activeTab:{}, header:{} }
+};
+
+async function loadForm(modelId, containerId){
+  const container = document.getElementById(containerId);
+  container.innerHTML = '<p style="text-align:center;color:var(--ink-soft);padding:40px 0">Memuat konfigurasi…</p>';
+  const cfg = await apiGet('config', { model_id: modelId });
+  formState[modelId].config = cfg;
+  formState[modelId].loaded = true;
+
+  // Kelompokkan parameter per parameter_group
+  const groups = {};
+  cfg.parameter.forEach(p => {
+    if(!groups[p.parameter_group]) groups[p.parameter_group] = [];
+    groups[p.parameter_group].push(p);
+  });
+
+  // Inisialisasi state data & tab aktif per grup
+  const data = {};
+  const activeTab = {};
+  Object.keys(groups).forEach(g => {
+    data[g] = {};
+    const subs = [...new Set(groups[g].map(p => p.sub_parameter))];
+    const nRep = groups[g][0].jumlah_pengulangan;
+    activeTab[g] = 0;
+    subs.forEach(sub => {
+      data[g][sub] = {};
+      groups[g].filter(p => p.sub_parameter === sub).forEach(p => {
+        data[g][sub][p.urutan_titik] = new Array(nRep).fill('');
+      });
+    });
+  });
+  formState[modelId].data = data;
+  formState[modelId].activeTab = activeTab;
+  formState[modelId].header = {};
+
+  container.innerHTML = renderFormShell(modelId, cfg, groups);
+  bindFormEvents(modelId, groups);
+}
+
+function renderFormShell(modelId, cfg, groups){
+  const model = cfg.model;
+  const label = MODEL_LABEL[modelId];
+  let html = `
+    <div class="formhead">
+      <div><h2>Lembar Kerja ${label}</h2><p>${model.nama_alat_formal}</p></div>
+      <button class="btn-reset" data-reset="${modelId}">Reset</button>
+    </div>
+
+    <div class="section">
+      <h3>Identifikasi Pelanggan</h3>
+      <div class="grid2">
+        <div class="field"><label>Nama Pelanggan</label><input id="${modelId}_nama_pelanggan" placeholder="Nama rumah sakit / klinik"></div>
+        <div class="field"><label>Alamat</label><input id="${modelId}_alamat_pelanggan" placeholder="Alamat lengkap"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Identifikasi Alat</h3>
+      <div class="grid4">
+        <div class="field"><label>Merk</label><input id="${modelId}_merk"></div>
+        <div class="field"><label>Model/Tipe</label><input id="${modelId}_tipe_model_alat"></div>
+        <div class="field"><label>No. Seri</label><input id="${modelId}_no_seri"></div>
+        <div class="field"><label>Resolusi</label><input id="${modelId}_resolusi" type="number" step="0.01" value="1"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Pelaksanaan Kalibrasi</h3>
+      <div class="grid4">
+        <div class="field readonly"><label>Tempat</label><input value="${model.tempat_kalibrasi_default}" readonly></div>
+        <div class="field readonly"><label>Ruang</label><input value="${model.ruang_kalibrasi_default}" readonly></div>
+        <div class="field"><label>Suhu Awal (°C)</label><input id="${modelId}_suhu_awal" type="number" value="25"></div>
+        <div class="field"><label>Suhu Akhir (°C)</label><input id="${modelId}_suhu_akhir" type="number" value="25"></div>
+        <div class="field"><label>RH Awal (%)</label><input id="${modelId}_rh_awal" type="number" value="60"></div>
+        <div class="field"><label>RH Akhir (%)</label><input id="${modelId}_rh_akhir" type="number" value="60"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Fisik dan Komponen</h3>
+      <div class="fisiklist" id="${modelId}_fisiklist">
+        ${FISIK_ITEMS.map((item, i) => `
+          <div class="fisikrow">
+            <span class="lbl">${i+1}. ${item}</span>
+            <div class="toggle2" data-fisik-idx="${i}">
+              <button class="on-baik sel" data-val="Baik">OK</button>
+              <button class="on-tidak" data-val="Tidak Baik">NOPE</button>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Pengukuran</h3>
+      ${Object.keys(groups).map(g => renderMeasBlock(modelId, g, groups[g])).join('')}
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-cancel" data-cancel="${modelId}">Batal</button>
+      <button class="btn btn-save" data-save="${modelId}">Simpan Perubahan</button>
+    </div>
+  `;
+  return html;
+}
+
+function renderMeasBlock(modelId, group, params){
+  const subs = [...new Set(params.map(p => p.sub_parameter))];
+  const titikList = [...new Set(params.map(p => p.urutan_titik))].sort((a,b)=>a-b);
+  const nRep = params[0].jumlah_pengulangan;
+  const tabsHtml = Array.from({length:nRep}, (_,i) =>
+    `<button data-tab-group="${group}" data-tab-idx="${i}" class="${i===0?'active':''}">${romawi(i+1)}</button>`).join('');
+
+  return `
+    <div class="measblock" data-group="${group}">
+      <div class="measblock-title">${group}</div>
+      ${subs.map(sub => `
+        <div style="margin-bottom:10px">
+          ${subs.length > 1 ? `<div style="font-size:11px;font-weight:700;color:var(--ink-soft);margin-bottom:4px">${sub}</div>` : ''}
+          ${titikList.map(t => {
+            const cfg = params.find(p => p.sub_parameter === sub && p.urutan_titik === t);
+            return `
+            <div class="measrow" data-sub="${sub}" data-titik="${t}">
+              <div class="setting num">${cfg.nilai_setting}<small>${cfg.satuan}</small></div>
+              <input type="number" step="0.1" data-input-sub="${sub}" data-input-titik="${t}" data-input-group="${group}">
+              <div class="avg num" data-avg-sub="${sub}" data-avg-titik="${t}">–<small>rata²</small></div>
+            </div>`;
+          }).join('')}
+        </div>
+      `).join('')}
+      <div class="tabs">${tabsHtml}</div>
+    </div>
+  `;
+}
+
+function romawi(n){ return ['I','II','III','IV','V','VI','VII','VIII'][n-1] || n; }
+
+function bindFormEvents(modelId, groups){
+  const root = document.getElementById(modelId === 'PO' ? 'view-oximeter' : 'view-tensi');
+  const state = formState[modelId];
+
+  // Toggle fisik
+  root.querySelectorAll('[data-fisik-idx]').forEach(box => {
+    box.addEventListener('click', e => {
+      const b = e.target.closest('button'); if(!b) return;
+      box.querySelectorAll('button').forEach(x => x.classList.remove('sel'));
+      b.classList.add('sel');
+    });
+  });
+
+  // Tab pengulangan per grup
+  root.querySelectorAll('[data-tab-group]').forEach(tabBtn => {
+    tabBtn.addEventListener('click', () => {
+      const g = tabBtn.dataset.tabGroup, idx = Number(tabBtn.dataset.tabIdx);
+      state.activeTab[g] = idx;
+      root.querySelectorAll(`[data-tab-group="${g}"]`).forEach(t => t.classList.toggle('active', Number(t.dataset.tabIdx) === idx));
+      // muat ulang nilai input sesuai tab aktif
+      root.querySelectorAll(`[data-input-group="${g}"]`).forEach(inp => {
+        const sub = inp.dataset.inputSub, titik = inp.dataset.inputTitik;
+        inp.value = state.data[g][sub][titik][idx] || '';
+      });
+    });
+  });
+
+  // Input pengukuran -> simpan ke state + update rata-rata
+  root.querySelectorAll('[data-input-group]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const g = inp.dataset.inputGroup, sub = inp.dataset.inputSub, titik = inp.dataset.inputTitik;
+      const idx = state.activeTab[g];
+      state.data[g][sub][titik][idx] = inp.value;
+      const arr = state.data[g][sub][titik].filter(v => v !== '').map(Number);
+      const avgEl = root.querySelector(`[data-avg-sub="${sub}"][data-avg-titik="${titik}"]`);
+      avgEl.innerHTML = arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2) + '<small>rata²</small>' : '–<small>rata²</small>';
+    });
+  });
+
+  root.querySelector(`[data-reset="${modelId}"]`).addEventListener('click', () => loadForm(modelId, root.id));
+  root.querySelector(`[data-cancel="${modelId}"]`).addEventListener('click', () => showView('beranda'));
+  root.querySelector(`[data-save="${modelId}"]`).addEventListener('click', () => submitForm(modelId, groups));
+}
+
+async function submitForm(modelId, groups){
+  const g = id => document.getElementById(modelId + '_' + id);
+  const root = document.getElementById(modelId === 'PO' ? 'view-oximeter' : 'view-tensi');
+  const state = formState[modelId];
+
+  const fisik = FISIK_ITEMS.map((item, i) => {
+    const sel = root.querySelector(`[data-fisik-idx="${i}"] .sel`);
+    return { bagian_alat: item, fisik: sel.dataset.val, fungsi: sel.dataset.val };
+  });
+
+  const readings = [];
+  let belumLengkap = false;
+  Object.keys(groups).forEach(grp => {
+    groups[grp].forEach(p => {
+      const nilai = state.data[grp][p.sub_parameter][p.urutan_titik];
+      if (nilai.some(v => v === '')) belumLengkap = true;
+      readings.push({
+        parameter_group: grp, sub_parameter: p.sub_parameter, urutan_titik: p.urutan_titik,
+        nilai_setting: p.nilai_setting, nilai: nilai.map(Number)
+      });
+    });
+  });
+
+  if (belumLengkap){ toast('Masih ada titik ukur yang belum lengkap diisi.'); return; }
+  if (!g('nama_pelanggan').value){ toast('Nama pelanggan wajib diisi.'); return; }
+
+  const payload = {
+    action: 'submitJob',
+    model_id: modelId,
+    nama_pelanggan: g('nama_pelanggan').value,
+    alamat_pelanggan: g('alamat_pelanggan').value,
+    merk: g('merk').value,
+    tipe_model_alat: g('tipe_model_alat').value,
+    no_seri: g('no_seri').value,
+    resolusi: g('resolusi').value,
+    suhu_awal: g('suhu_awal').value, suhu_akhir: g('suhu_akhir').value,
+    rh_awal: g('rh_awal').value, rh_akhir: g('rh_akhir').value,
+    fisik: fisik, readings: readings
+  };
+
+  toast('Menyimpan…');
+  try{
+    const res = await apiPost(payload);
+    if (res.error){ toast('Gagal: ' + res.error); return; }
+    toast('Tersimpan — ' + res.job_id + ' (' + res.hasil_akhir + ')');
+    loadForm(modelId, root.id);
+    showView('beranda');
+  }catch(err){ toast('Gagal terhubung ke server.'); }
+}
+
+/* ============ CARI ============ */
+let searchTimer;
+document.getElementById('searchInput').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadSearch(e.target.value), 350);
+});
+
+async function loadSearch(q){
+  const box = document.getElementById('searchResults');
+  box.innerHTML = '<p class="empty">Memuat…</p>';
+  try{
+    const rows = await apiGet('search', { q });
+    if (!rows.length){ box.innerHTML = '<p class="empty">Belum ada data.</p>'; return; }
+    box.innerHTML = rows.map(r => `
+      <div class="resultcard" data-job="${r.job_id}">
+        <div>
+          <div class="rc-name">${r.nama_pelanggan || '(tanpa nama)'}</div>
+          <div class="rc-sub">${r.job_id} · ${MODEL_LABEL[r.model_id] || r.model_id} · ${r.no_seri || '-'}</div>
+        </div>
+        ${badgeFor(r)}
+      </div>`).join('');
+    box.querySelectorAll('[data-job]').forEach(el => el.addEventListener('click', () => openDetail(el.dataset.job)));
+  }catch(err){ box.innerHTML = '<p class="empty">Tidak bisa terhubung ke server.</p>'; }
+}
+
+function badgeFor(r){
+  if (r.hasil_akhir === 'LAIK') return '<span class="badge badge-laik">LAIK</span>';
+  if (r.hasil_akhir === 'TIDAK LAIK') return '<span class="badge badge-tidak">TIDAK LAIK</span>';
+  return `<span class="badge badge-proses">${r.status}</span>`;
+}
+
+async function openDetail(jobId){
+  const modal = document.getElementById('modalOverlay');
+  const body = document.getElementById('modalBody');
+  body.innerHTML = '<p class="empty">Memuat…</p>';
+  modal.classList.add('show');
+  const d = await apiGet('jobDetail', { job_id: jobId });
+  if (d.error){ body.innerHTML = '<p class="empty">' + d.error + '</p>'; return; }
+  const j = d.job;
+  body.innerHTML = `
+    <h2 style="margin:4px 0 2px">${j.nama_pelanggan}</h2>
+    <p style="color:var(--ink-soft);font-size:13px;margin:0 0 10px">${j.job_id} · ${MODEL_LABEL[j.model_id]} · ${j.no_seri}</p>
+    ${badgeFor(j)}
+    <table class="mtable">
+      <tr><th>Titik</th><th>Setting</th><th>Rata²</th><th>Koreksi</th><th>U</th><th>Status</th></tr>
+      ${d.hasil.map(h => `<tr>
+        <td>${h.sub_parameter} #${h.urutan_titik}</td><td class="num">${h.nilai_setting}</td>
+        <td class="num">${h.rata_rata_pembacaan}</td><td class="num">${h.koreksi}</td>
+        <td class="num">${h.ketidakpastian_U}</td><td>${h.status_titik}</td>
+      </tr>`).join('')}
+    </table>
+  `;
+}
+document.getElementById('modalClose').addEventListener('click', () => document.getElementById('modalOverlay').classList.remove('show'));
+document.getElementById('modalOverlay').addEventListener('click', e => { if(e.target.id==='modalOverlay') e.currentTarget.classList.remove('show'); });
+</script>
+</body>
+</html>
