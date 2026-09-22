@@ -384,7 +384,21 @@ const formState = {
 async function loadForm(modelId, containerId){
   const container = document.getElementById(containerId);
   container.innerHTML = '<p style="text-align:center;color:var(--ink-soft);padding:40px 0">Memuat konfigurasi…</p>';
-  const cfg = await apiGet('config', { model_id: modelId });
+  let cfg;
+  try{
+    cfg = await apiGet('config', { model_id: modelId });
+  }catch(err){
+    container.innerHTML = '<p class="empty">Tidak bisa terhubung ke server API.<br>Cek console browser (F12) untuk detail error, dan pastikan API_BASE sudah benar.</p>';
+    return;
+  }
+  if (cfg.error){
+    container.innerHTML = '<p class="empty">Server API mengembalikan error: ' + cfg.error + '</p>';
+    return;
+  }
+  if (!cfg.parameter || !cfg.parameter.length){
+    container.innerHTML = '<p class="empty">Config_Parameter untuk model "' + modelId + '" kosong di spreadsheet.</p>';
+    return;
+  }
   formState[modelId].config = cfg;
   formState[modelId].loaded = true;
 
@@ -432,6 +446,8 @@ function renderFormShell(modelId, cfg, groups){
       <div class="grid2">
         <div class="field"><label>Nama Pelanggan</label><input id="${modelId}_nama_pelanggan" placeholder="Nama rumah sakit / klinik"></div>
         <div class="field"><label>Alamat</label><input id="${modelId}_alamat_pelanggan" placeholder="Alamat lengkap"></div>
+        <div class="field"><label>Email</label><input id="${modelId}_email_pelanggan" type="email" placeholder="untuk kirim sertifikat"></div>
+        <div class="field"><label>No. HP / WhatsApp</label><input id="${modelId}_no_hp_pelanggan" placeholder="08xxxxxxxxxx"></div>
       </div>
     </div>
 
@@ -590,6 +606,8 @@ async function submitForm(modelId, groups){
     model_id: modelId,
     nama_pelanggan: g('nama_pelanggan').value,
     alamat_pelanggan: g('alamat_pelanggan').value,
+    email_pelanggan: g('email_pelanggan').value,
+    no_hp_pelanggan: g('no_hp_pelanggan').value,
     merk: g('merk').value,
     tipe_model_alat: g('tipe_model_alat').value,
     no_seri: g('no_seri').value,
