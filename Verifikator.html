@@ -263,13 +263,36 @@ async function openDetail(jobId){
       <button class="btn btn-cancel" id="btnKembalikan">Kembalikan ke Operator</button>
       <button class="btn btn-save" id="btnSahkan">Sahkan Data</button>
     </div>
-    ` : `<div class="section"><h3>Catatan Verifikator</h3><p style="font-size:13px">${j.catatan_verifikator || '(tidak ada catatan)'}</p></div>`}
+    ` : ''}
+    ${j.status === 'Tersahkan' ? `
+    <div class="section">
+      <h3>Catatan Verifikator</h3>
+      <p style="font-size:13px">${j.catatan_verifikator || '(tidak ada catatan)'}</p>
+    </div>
+    <div class="actions">
+      <button class="btn btn-save" id="btnTerbitkan">Terbitkan Sertifikat</button>
+    </div>
+    ` : ''}
+    ${j.status === 'Terbit' || j.status === 'Arsip' ? `
+    <div class="section">
+      <h3>Sertifikat</h3>
+      <p style="font-size:13px">No. Sertifikat: <b class="num">${j.no_sertifikat}</b></p>
+    </div>
+    <div class="actions">
+      <button class="btn btn-save" id="btnCetak">Buka Halaman Cetak</button>
+    </div>
+    ` : ''}
+    ${(j.status !== 'Diajukan' && j.status !== 'Tersahkan' && j.status !== 'Terbit' && j.status !== 'Arsip') ? `
+    <div class="section"><h3>Catatan Verifikator</h3><p style="font-size:13px">${j.catatan_verifikator || '(tidak ada catatan)'}</p></div>
+    ` : ''}
   `;
 
   document.getElementById('btnBack').addEventListener('click', () => { showList(); loadList(pillnav.querySelector('.pill.active').dataset.status); });
 
   const btnSahkan = document.getElementById('btnSahkan');
   const btnKembalikan = document.getElementById('btnKembalikan');
+  const btnTerbitkan = document.getElementById('btnTerbitkan');
+  const btnCetak = document.getElementById('btnCetak');
   if (btnSahkan){
     btnSahkan.addEventListener('click', async () => {
       if (!namaInput.value){ toast('Isi nama Anda dulu di atas.'); return; }
@@ -290,6 +313,21 @@ async function openDetail(jobId){
       if (res.error){ toast('Gagal: ' + res.error); return; }
       toast('Job dikembalikan ke operator.');
       showList(); loadList(pillnav.querySelector('.pill.active').dataset.status);
+    });
+  }
+  if (btnTerbitkan){
+    btnTerbitkan.addEventListener('click', async () => {
+      if (!namaInput.value){ toast('Isi nama Anda dulu di atas.'); return; }
+      toast('Menerbitkan…');
+      const res = await apiPost({ action:'terbitkanSertifikat', job_id:jobId, oleh:namaInput.value });
+      if (res.error){ toast('Gagal: ' + res.error); return; }
+      toast('Sertifikat terbit: ' + res.no_sertifikat);
+      openDetail(jobId);
+    });
+  }
+  if (btnCetak){
+    btnCetak.addEventListener('click', () => {
+      window.open('cetak.html?job_id=' + encodeURIComponent(jobId), '_blank');
     });
   }
 }
