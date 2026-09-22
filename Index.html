@@ -167,6 +167,18 @@
   .mt-avg{font-size:10.5px; font-weight:700; color:var(--ink-soft)}
   .mt-avg::before{content:'⌀ '; opacity:.6}
 
+  .meas-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(68px, 1fr)); gap:8px}
+  .meas-card{background:var(--bg); border:1px solid var(--line); border-radius:var(--r-sm); padding:8px 5px; text-align:center}
+  .meas-card .mc-setting{font-size:11.5px; font-weight:800; color:var(--blue-dark)}
+  .meas-card .mc-setting small{display:block; font-size:8px; font-weight:600; color:var(--ink-soft); text-transform:uppercase}
+  .meas-card input{
+    width:100%; border:1px solid var(--line); background:#fff; border-radius:8px;
+    padding:6px 2px; font-size:13px; text-align:center; font-weight:700; margin:4px 0;
+  }
+  .meas-card input:focus{outline:none; border-color:var(--blue)}
+  .meas-card .mc-avg{font-size:9px; font-weight:700; color:var(--ink-soft)}
+  .meas-card .mc-avg::before{content:'⌀ '; opacity:.6}
+
   .tabs{display:flex; justify-content:center; gap:6px; margin-top:14px}
   .tabs button{
     width:32px; height:32px; border-radius:9px; background:var(--bg); font-size:12px; font-weight:800; color:var(--ink-soft);
@@ -544,9 +556,31 @@ function renderFormShell(modelId, cfg, groups){
 function renderMeasBlock(modelId, group, params){
   const subs = [...new Set(params.map(p => p.sub_parameter))];
   const titikList = [...new Set(params.map(p => p.urutan_titik))].sort((a,b)=>a-b);
+
+  // Grup dengan 1 sub-parameter (SpO2, HeartRate) -> grid kartu kecil, hemat tempat
+  if (subs.length === 1){
+    const sub = subs[0];
+    return `
+      <div class="measblock" data-group="${group}">
+        <div class="measblock-title">${group}</div>
+        <div class="meas-grid">
+          ${titikList.map(t => {
+            const cfg = params.find(p => p.urutan_titik === t);
+            return `
+            <div class="meas-card">
+              <div class="mc-setting num">${cfg.nilai_setting}<small>${cfg.satuan}</small></div>
+              <input type="number" step="0.1" data-input-sub="${sub}" data-input-titik="${t}" data-input-group="${group}">
+              <div class="mc-avg num" data-avg-sub="${sub}" data-avg-titik="${t}">–</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // Grup dengan >1 sub-parameter (NIBP: Systole/MAP/Diastole) -> tabel per titik
   const cols = subs.length;
   const gridStyle = `grid-template-columns:40px repeat(${cols}, 1fr)`;
-
   return `
     <div class="measblock" data-group="${group}">
       <div class="measblock-title">${group}</div>
