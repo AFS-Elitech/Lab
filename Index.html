@@ -63,6 +63,9 @@
     position:absolute; top:4px; bottom:4px; left:4px; z-index:1; border-radius:999px;
     background:var(--blue); transition:transform .38s var(--ease), width .38s var(--ease);
   }
+  .whoami{display:flex; gap:8px; width:100%; max-width:300px}
+  .whoami input{flex:1; border:1px solid var(--line); background:var(--white); border-radius:999px; padding:9px 15px; font-size:12.5px; text-align:center}
+  .whoami input:focus{outline:none; border-color:var(--blue)}
 
   /* ---------- Layout ---------- */
   main{max-width:920px; margin:0 auto; padding:6px 16px 60px}
@@ -145,24 +148,42 @@
   .measblock{margin-bottom:16px}
   .measblock:last-child{margin-bottom:0}
   .measblock-title{font-size:12.5px; font-weight:800; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; margin-bottom:10px}
-  .measrow{display:grid; grid-template-columns:70px 1fr 70px; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line)}
-  .measrow:last-child{border-bottom:none}
-  .measrow .setting{font-size:15px; font-weight:800; color:var(--blue-dark)}
-  .measrow .setting small{display:block; font-size:9.5px; font-weight:600; color:var(--ink-soft); text-transform:uppercase}
-  .measrow input{
-    width:100%; border:1px solid var(--line); background:var(--bg); border-radius:var(--r-sm);
-    padding:9px 10px; font-size:14px; text-align:center; font-weight:700;
-  }
-  .measrow input:focus{outline:none; border-color:var(--blue); background:#fff}
-  .measrow .avg{font-size:14px; font-weight:800; text-align:right; color:var(--ink)}
-  .measrow .avg small{display:block; font-size:9px; font-weight:600; color:var(--ink-soft)}
 
-  .tabs{display:flex; justify-content:center; gap:6px; margin-top:12px}
+  .meastable{display:flex; flex-direction:column; gap:4px}
+  .mt-head, .mt-row{display:grid; align-items:center; gap:6px}
+  .mt-head{padding-bottom:6px; border-bottom:2px solid var(--line); margin-bottom:2px}
+  .mt-head .mt-cell{font-size:10.5px; font-weight:800; color:var(--blue-dark); text-align:center; text-transform:uppercase}
+  .mt-row{padding:8px 0; border-bottom:1px solid var(--line)}
+  .mt-row:last-child{border-bottom:none}
+  .mt-titikno{font-size:11px; font-weight:700; color:var(--ink-soft); text-align:center}
+  .mt-cell{text-align:center}
+  .mt-setting{font-size:12.5px; font-weight:800; color:var(--blue-dark); margin-bottom:3px}
+  .mt-setting small{display:block; font-size:8.5px; font-weight:600; color:var(--ink-soft); text-transform:uppercase}
+  .mt-cell input{
+    width:100%; border:1px solid var(--line); background:var(--bg); border-radius:var(--r-sm);
+    padding:8px 4px; font-size:14px; text-align:center; font-weight:700; margin-bottom:3px;
+  }
+  .mt-cell input:focus{outline:none; border-color:var(--blue); background:#fff}
+  .mt-avg{font-size:10.5px; font-weight:700; color:var(--ink-soft)}
+  .mt-avg::before{content:'⌀ '; opacity:.6}
+
+  .tabs{display:flex; justify-content:center; gap:6px; margin-top:14px}
   .tabs button{
-    width:30px; height:30px; border-radius:9px; background:var(--bg); font-size:12px; font-weight:800; color:var(--ink-soft);
+    width:32px; height:32px; border-radius:9px; background:var(--bg); font-size:12px; font-weight:800; color:var(--ink-soft);
     transition:all .25s var(--ease);
   }
-  .tabs button.active{background:var(--blue); color:#fff; transform:scale(1.08)}
+  .tabs button.active{background:var(--blue); color:#fff; transform:scale(1.1)}
+
+  /* ---------- Loading overlay ---------- */
+  .loading-overlay{
+    position:fixed; inset:0; background:rgba(242,244,247,.85); backdrop-filter:blur(2px);
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px;
+    z-index:100; opacity:0; pointer-events:none; transition:opacity .25s var(--ease);
+  }
+  .loading-overlay.show{opacity:1; pointer-events:auto}
+  .spinner{width:44px; height:44px; border:4px solid var(--blue-tint); border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-overlay span{font-size:13px; font-weight:700; color:var(--ink-soft)}
 
   .actions{display:flex; gap:12px; margin-top:4px}
   .btn{flex:1; padding:15px; border-radius:var(--r-md); font-size:14.5px; font-weight:800; transition:transform .15s var(--ease), filter .15s var(--ease)}
@@ -223,6 +244,7 @@
 
 <div class="topbar">
   <div class="brand"><span class="brand-mark">⎈</span> Kalibrasi Lab</div>
+  <div class="whoami"><input id="namaOperator" placeholder="Nama Anda (operator/pembuat laporan)"></div>
   <nav class="pillnav" id="pillnav">
     <span class="pill-indicator" id="pillIndicator"></span>
     <button class="pill active" data-view="beranda">Beranda</button>
@@ -286,6 +308,10 @@
 </main>
 
 <div id="toast"></div>
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <span id="loadingText">Menyimpan…</span>
+</div>
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <button class="modal-close" id="modalClose">✕</button>
@@ -306,6 +332,16 @@ const FISIK_ITEMS = [
 ];
 
 const MODEL_LABEL = { PO: 'Oximeter', BPM: 'Tensimeter' };
+
+const namaOperatorInput = document.getElementById('namaOperator');
+namaOperatorInput.value = localStorage.getItem('nama_operator') || '';
+namaOperatorInput.addEventListener('input', () => localStorage.setItem('nama_operator', namaOperatorInput.value));
+
+function showLoading(text){
+  document.getElementById('loadingText').textContent = text || 'Memuat…';
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading(){ document.getElementById('loadingOverlay').classList.remove('show'); }
 
 /* ============ NAV & VIEW SWITCH ============ */
 const pillnav = document.getElementById('pillnav');
@@ -377,8 +413,8 @@ async function loadDashboard(){
 
 /* ============ FORM STATE ============ */
 const formState = {
-  PO: { loaded:false, config:null, data:{}, activeTab:{}, header:{} },
-  BPM:{ loaded:false, config:null, data:{}, activeTab:{}, header:{} }
+  PO: { loaded:false, config:null, data:{}, activeTab:0, nRep:5 },
+  BPM:{ loaded:false, config:null, data:{}, activeTab:0, nRep:6 }
 };
 
 async function loadForm(modelId, containerId){
@@ -409,14 +445,14 @@ async function loadForm(modelId, containerId){
     groups[p.parameter_group].push(p);
   });
 
-  // Inisialisasi state data & tab aktif per grup
+  // Inisialisasi state data — 1 sesi pengulangan berlaku untuk semua grup dalam model ini
   const data = {};
-  const activeTab = {};
+  let nRepMax = 1;
   Object.keys(groups).forEach(g => {
     data[g] = {};
     const subs = [...new Set(groups[g].map(p => p.sub_parameter))];
     const nRep = groups[g][0].jumlah_pengulangan;
-    activeTab[g] = 0;
+    nRepMax = Math.max(nRepMax, nRep);
     subs.forEach(sub => {
       data[g][sub] = {};
       groups[g].filter(p => p.sub_parameter === sub).forEach(p => {
@@ -425,8 +461,8 @@ async function loadForm(modelId, containerId){
     });
   });
   formState[modelId].data = data;
-  formState[modelId].activeTab = activeTab;
-  formState[modelId].header = {};
+  formState[modelId].activeTab = 0;
+  formState[modelId].nRep = nRepMax;
 
   container.innerHTML = renderFormShell(modelId, cfg, groups);
   bindFormEvents(modelId, groups);
@@ -444,8 +480,8 @@ function renderFormShell(modelId, cfg, groups){
     <div class="section">
       <h3>Identifikasi Pelanggan</h3>
       <div class="grid2">
-        <div class="field"><label>Nama Pelanggan</label><input id="${modelId}_nama_pelanggan" placeholder="Nama rumah sakit / klinik"></div>
-        <div class="field"><label>Alamat</label><input id="${modelId}_alamat_pelanggan" placeholder="Alamat lengkap"></div>
+        <div class="field"><label>Nama Pelanggan</label><input id="${modelId}_nama_pelanggan" placeholder="Nama rumah sakit / klinik" style="text-transform:uppercase"></div>
+        <div class="field"><label>Alamat</label><input id="${modelId}_alamat_pelanggan" placeholder="Alamat lengkap" style="text-transform:uppercase"></div>
         <div class="field"><label>Email</label><input id="${modelId}_email_pelanggan" type="email" placeholder="untuk kirim sertifikat"></div>
         <div class="field"><label>No. HP / WhatsApp</label><input id="${modelId}_no_hp_pelanggan" placeholder="08xxxxxxxxxx"></div>
       </div>
@@ -454,9 +490,9 @@ function renderFormShell(modelId, cfg, groups){
     <div class="section">
       <h3>Identifikasi Alat</h3>
       <div class="grid4">
-        <div class="field"><label>Merk</label><input id="${modelId}_merk"></div>
-        <div class="field"><label>Model/Tipe</label><input id="${modelId}_tipe_model_alat"></div>
-        <div class="field"><label>No. Seri</label><input id="${modelId}_no_seri"></div>
+        <div class="field"><label>Merk</label><input id="${modelId}_merk" style="text-transform:uppercase"></div>
+        <div class="field"><label>Model/Tipe</label><input id="${modelId}_tipe_model_alat" style="text-transform:uppercase"></div>
+        <div class="field"><label>No. Seri</label><input id="${modelId}_no_seri" style="text-transform:uppercase"></div>
         <div class="field"><label>Resolusi</label><input id="${modelId}_resolusi" type="number" step="0.01" value="1"></div>
       </div>
     </div>
@@ -489,7 +525,12 @@ function renderFormShell(modelId, cfg, groups){
 
     <div class="section">
       <h3>Pengukuran</h3>
+      <p style="font-size:11.5px;color:var(--ink-soft);margin:-8px 0 12px">Pilih pengulangan ke berapa di bawah, isi semua kolom, lalu pindah ke pengulangan berikutnya.</p>
       ${Object.keys(groups).map(g => renderMeasBlock(modelId, g, groups[g])).join('')}
+      <div class="tabs" id="${modelId}_globaltabs">
+        ${Array.from({length: formState[modelId].nRep}, (_,i) =>
+          `<button data-tab-idx="${i}" class="${i===0?'active':''}">${romawi(i+1)}</button>`).join('')}
+      </div>
     </div>
 
     <div class="actions">
@@ -503,28 +544,32 @@ function renderFormShell(modelId, cfg, groups){
 function renderMeasBlock(modelId, group, params){
   const subs = [...new Set(params.map(p => p.sub_parameter))];
   const titikList = [...new Set(params.map(p => p.urutan_titik))].sort((a,b)=>a-b);
-  const nRep = params[0].jumlah_pengulangan;
-  const tabsHtml = Array.from({length:nRep}, (_,i) =>
-    `<button data-tab-group="${group}" data-tab-idx="${i}" class="${i===0?'active':''}">${romawi(i+1)}</button>`).join('');
+  const cols = subs.length;
+  const gridStyle = `grid-template-columns:40px repeat(${cols}, 1fr)`;
 
   return `
     <div class="measblock" data-group="${group}">
       <div class="measblock-title">${group}</div>
-      ${subs.map(sub => `
-        <div style="margin-bottom:10px">
-          ${subs.length > 1 ? `<div style="font-size:11px;font-weight:700;color:var(--ink-soft);margin-bottom:4px">${sub}</div>` : ''}
-          ${titikList.map(t => {
-            const cfg = params.find(p => p.sub_parameter === sub && p.urutan_titik === t);
-            return `
-            <div class="measrow" data-sub="${sub}" data-titik="${t}">
-              <div class="setting num">${cfg.nilai_setting}<small>${cfg.satuan}</small></div>
-              <input type="number" step="0.1" data-input-sub="${sub}" data-input-titik="${t}" data-input-group="${group}">
-              <div class="avg num" data-avg-sub="${sub}" data-avg-titik="${t}">–<small>rata²</small></div>
-            </div>`;
-          }).join('')}
+      <div class="meastable">
+        <div class="mt-head" style="${gridStyle}">
+          <div class="mt-cell"></div>
+          ${subs.map(s => `<div class="mt-cell">${s}</div>`).join('')}
         </div>
-      `).join('')}
-      <div class="tabs">${tabsHtml}</div>
+        ${titikList.map(t => `
+          <div class="mt-row" style="${gridStyle}">
+            <div class="mt-titikno">#${t}</div>
+            ${subs.map(sub => {
+              const cfg = params.find(p => p.sub_parameter === sub && p.urutan_titik === t);
+              return `
+              <div class="mt-cell">
+                <div class="mt-setting num">${cfg.nilai_setting}<small>${cfg.satuan}</small></div>
+                <input type="number" step="0.1" data-input-sub="${sub}" data-input-titik="${t}" data-input-group="${group}">
+                <div class="mt-avg num" data-avg-sub="${sub}" data-avg-titik="${t}">–</div>
+              </div>`;
+            }).join('')}
+          </div>
+        `).join('')}
+      </div>
     </div>
   `;
 }
@@ -544,29 +589,31 @@ function bindFormEvents(modelId, groups){
     });
   });
 
-  // Tab pengulangan per grup
-  root.querySelectorAll('[data-tab-group]').forEach(tabBtn => {
-    tabBtn.addEventListener('click', () => {
-      const g = tabBtn.dataset.tabGroup, idx = Number(tabBtn.dataset.tabIdx);
-      state.activeTab[g] = idx;
-      root.querySelectorAll(`[data-tab-group="${g}"]`).forEach(t => t.classList.toggle('active', Number(t.dataset.tabIdx) === idx));
-      // muat ulang nilai input sesuai tab aktif
-      root.querySelectorAll(`[data-input-group="${g}"]`).forEach(inp => {
-        const sub = inp.dataset.inputSub, titik = inp.dataset.inputTitik;
-        inp.value = state.data[g][sub][titik][idx] || '';
+  // Tab pengulangan — SATU sesi untuk seluruh grup (SpO2 & HeartRate ikut bareng, dst)
+  const globalTabs = root.querySelector(`#${modelId}_globaltabs`);
+  if (globalTabs){
+    globalTabs.querySelectorAll('[data-tab-idx]').forEach(tabBtn => {
+      tabBtn.addEventListener('click', () => {
+        const idx = Number(tabBtn.dataset.tabIdx);
+        state.activeTab = idx;
+        globalTabs.querySelectorAll('[data-tab-idx]').forEach(t => t.classList.toggle('active', Number(t.dataset.tabIdx) === idx));
+        root.querySelectorAll('[data-input-group]').forEach(inp => {
+          const g = inp.dataset.inputGroup, sub = inp.dataset.inputSub, titik = inp.dataset.inputTitik;
+          inp.value = (state.data[g] && state.data[g][sub] && state.data[g][sub][titik]) ? (state.data[g][sub][titik][idx] || '') : '';
+        });
       });
     });
-  });
+  }
 
   // Input pengukuran -> simpan ke state + update rata-rata
   root.querySelectorAll('[data-input-group]').forEach(inp => {
     inp.addEventListener('input', () => {
       const g = inp.dataset.inputGroup, sub = inp.dataset.inputSub, titik = inp.dataset.inputTitik;
-      const idx = state.activeTab[g];
+      const idx = state.activeTab;
       state.data[g][sub][titik][idx] = inp.value;
       const arr = state.data[g][sub][titik].filter(v => v !== '').map(Number);
       const avgEl = root.querySelector(`[data-avg-sub="${sub}"][data-avg-titik="${titik}"]`);
-      avgEl.innerHTML = arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2) + '<small>rata²</small>' : '–<small>rata²</small>';
+      avgEl.textContent = arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2) : '–';
     });
   });
 
@@ -600,31 +647,36 @@ async function submitForm(modelId, groups){
 
   if (belumLengkap){ toast('Masih ada titik ukur yang belum lengkap diisi.'); return; }
   if (!g('nama_pelanggan').value){ toast('Nama pelanggan wajib diisi.'); return; }
+  if (!namaOperatorInput.value){ toast('Isi Nama Anda (operator) dulu di atas.'); return; }
+
+  const up = v => (v || '').toUpperCase();
 
   const payload = {
     action: 'submitJob',
     model_id: modelId,
-    nama_pelanggan: g('nama_pelanggan').value,
-    alamat_pelanggan: g('alamat_pelanggan').value,
+    nama_pelanggan: up(g('nama_pelanggan').value),
+    alamat_pelanggan: up(g('alamat_pelanggan').value),
     email_pelanggan: g('email_pelanggan').value,
     no_hp_pelanggan: g('no_hp_pelanggan').value,
-    merk: g('merk').value,
-    tipe_model_alat: g('tipe_model_alat').value,
-    no_seri: g('no_seri').value,
+    merk: up(g('merk').value),
+    tipe_model_alat: up(g('tipe_model_alat').value),
+    no_seri: up(g('no_seri').value),
     resolusi: g('resolusi').value,
     suhu_awal: g('suhu_awal').value, suhu_akhir: g('suhu_akhir').value,
     rh_awal: g('rh_awal').value, rh_akhir: g('rh_akhir').value,
+    diinput_oleh: namaOperatorInput.value,
     fisik: fisik, readings: readings
   };
 
-  toast('Menyimpan…');
+  showLoading('Menyimpan job…');
   try{
     const res = await apiPost(payload);
+    hideLoading();
     if (res.error){ toast('Gagal: ' + res.error); return; }
     toast('Tersimpan — ' + res.job_id + ' (' + res.hasil_akhir + ')');
     loadForm(modelId, root.id);
     showView('beranda');
-  }catch(err){ toast('Gagal terhubung ke server.'); }
+  }catch(err){ hideLoading(); toast('Gagal terhubung ke server.'); }
 }
 
 /* ============ CARI ============ */
