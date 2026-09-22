@@ -4,22 +4,33 @@
 <meta charset="UTF-8">
 <title>Cetak Sertifikat</title>
 <style>
-  /* ====== GESER DI SINI KALAU HASIL CETAK MELESET DARI KERTAS PRE-PRINT ====== */
+  /* ======================================================================
+     PENGATURAN KERTAS F4 PRE-PRINTED — GESER DI SINI KALAU HASIL CETAK MELESET
+     - Kertas sudah ada cetakan kop/logo/footer di printer Anda; sistem ini
+       HANYA mencetak teks. Kalau posisi meleset dari kop, ubah margin-top
+       (jarak dari atas kertas sampai mulai teks "SERTIFIKAT KALIBRASI").
+     - Nilai di bawah adalah perkiraan awal (diambil dari margin di file LK asli,
+       ~26-30mm dari atas). Selalu cek dengan print-preview / print 1 lembar
+       percobaan dulu sebelum cetak massal.
+     ====================================================================== */
   :root{
     --page-w: 215mm;
-    --page-h: 330mm;       /* F4. Kalau printer Anda mendefinisikan F4 beda, ubah di sini */
-    --margin-top: 15mm;
-    --margin-left: 20mm;
+    --page-h: 330mm;       /* F4 */
+    --margin-top: 30mm;
+    --margin-left: 18mm;
     --margin-right: 15mm;
+    --margin-bottom: 12mm;
     --font-size: 10.5pt;
     --line-h: 1.35;
+    --font-serif: 'Times New Roman', Times, 'Liberation Serif', serif;
   }
   *{box-sizing:border-box}
   body{margin:0; background:#ccc; font-family:Arial, Helvetica, sans-serif; font-size:var(--font-size); line-height:var(--line-h); color:#111}
   .page{
     width:var(--page-w); min-height:var(--page-h); background:#fff; margin:16px auto;
-    padding:var(--margin-top) var(--margin-right) 15mm var(--margin-left);
+    padding:var(--margin-top) var(--margin-right) var(--margin-bottom) var(--margin-left);
     box-shadow:0 4px 16px rgba(0,0,0,.25); position:relative;
+    font-family:var(--font-serif);
   }
   .toolbar{
     position:sticky; top:0; background:#1c2333; color:#fff; padding:10px 16px; display:flex; gap:10px; align-items:center;
@@ -28,28 +39,39 @@
   .toolbar button{background:#3b77d7; color:#fff; border:none; padding:9px 18px; border-radius:6px; font-size:13px; font-weight:700; cursor:pointer}
   .toolbar span{font-size:12px; opacity:.8}
 
-  h1.title{font-size:13pt; font-weight:bold; text-align:center; margin:0 0 4mm; letter-spacing:.5px}
+  h1.title{font-size:15.5pt; font-weight:bold; text-align:center; margin:0 0 5mm; letter-spacing:.3px}
+  h1.title .en{font-weight:normal; font-size:11.5pt}
   .headrow{display:flex; justify-content:space-between; margin-bottom:6mm; font-size:9.5pt}
 
-  .sectiontitle{font-weight:bold; font-size:10.5pt; margin:6mm 0 1mm; text-transform:none}
+  .sectiontitle{font-weight:bold; font-size:11.5pt; margin:6mm 0 0.5mm}
   .sectionsub{font-size:8.5pt; font-style:italic; margin-bottom:3mm; color:#333}
 
-  table.fields{width:100%; border-collapse:collapse; margin-bottom:2mm}
-  table.fields td{padding:1.2mm 2mm; vertical-align:top; font-size:var(--font-size)}
-  table.fields td.no{width:6mm}
-  table.fields td.label{width:56mm}
-  table.fields td.colon{width:4mm}
+  table.fields{width:100%; border-collapse:collapse; margin-bottom:1mm}
+  table.fields td{padding:1.1mm 2mm; vertical-align:top; font-size:var(--font-size)}
+  table.fields td.no{width:6mm; text-align:right}
+  table.fields td.label{width:66mm; font-weight:bold}
+  table.fields td.colon{width:4mm; font-weight:bold}
+  table.fields td.val{}
+  table.fields td.val.bold{font-weight:bold}
 
-  table.perf{width:100%; border-collapse:collapse; margin-top:2mm; font-size:9pt}
-  table.perf th, table.perf td{border:0.4pt solid #999; padding:1.5mm 2mm; text-align:center}
-  table.perf th{font-weight:bold; background:#f3f3f3}
-  table.perf td.paramcol{text-align:left}
+  table.perf{width:100%; border-collapse:collapse; margin-top:1.5mm; font-size:8.6pt}
+  table.perf th, table.perf td{border:0.4pt solid #999; padding:1.3mm 1.6mm; text-align:center}
+  table.perf th{font-weight:bold; background:#f3f3f3; font-size:8pt}
+  table.perf th.unit{font-weight:normal; font-style:normal; background:#f8f8f8; font-size:7.5pt}
+  table.perf td.paramcol{text-align:center}
 
-  .signblock{margin-top:14mm; display:flex; justify-content:flex-end}
+  .subsec{font-weight:bold; font-size:var(--font-size); margin:3mm 0 1mm}
+
+  .signblock{margin-top:12mm; display:flex; justify-content:flex-end}
   .signbox{text-align:center; width:60mm; font-size:var(--font-size)}
-  .signbox .space{height:20mm}
+  .signbox .space{height:18mm}
+  .signbox .bhs{font-style:italic; font-size:9pt}
 
-  .footnote{margin-top:8mm; font-size:8pt; line-height:1.4; text-align:justify}
+  .diperiksa{margin-top:10mm; font-size:var(--font-size)}
+
+  .footnote{margin-top:7mm; font-size:8pt; line-height:1.4; text-align:center}
+  .akhir{font-weight:bold; font-size:var(--font-size); margin-top:8mm}
+  .tglbuat{margin-top:5mm; font-size:8.5pt}
 
   @media print{
     body{background:#fff}
@@ -71,7 +93,10 @@
 
 <script>
 const API_BASE = 'https://script.google.com/macros/s/AKfycby-LcxnGqEaA203sl3pIEPMsG2X0PBZIWJYCEIaxd5EISGp2YirfkAe6Jr1t5oYUynAVQ/exec';
-const MODEL_LABEL = { PO: 'Oximeter', BPM: 'Tensimeter' };
+
+/* Label ramah untuk tiap parameter_group, dipakai sebagai judul sub-bagian
+   (huruf a./b.) pada model yang punya lebih dari 1 grup pengukuran, mis. Oximeter. */
+const GROUP_LABEL = { SpO2: 'Saturasi Oksigen', HeartRate: 'Heart Rate', NIBP: 'Tekanan Darah (NIBP)' };
 
 async function apiGet(action, params){
   const qs = new URLSearchParams({ action, ...params }).toString();
@@ -79,15 +104,230 @@ async function apiGet(action, params){
   return res.json();
 }
 
+function esc(v){ return (v === null || v === undefined) ? '' : String(v); }
+
 function fmtTgl(d){
   if(!d) return '-';
   const dt = new Date(d);
+  if (isNaN(dt)) return '-';
   return dt.toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
 }
 function tglBerakhir(d){
   if(!d) return '-';
-  const dt = new Date(d); dt.setDate(dt.getDate()+365);
+  const dt = new Date(d); if (isNaN(dt)) return '-';
+  dt.setDate(dt.getDate()+365);
   return fmtTgl(dt);
+}
+
+function fieldRow(no, label, value, bold){
+  return `<tr><td class="no">${no}</td><td class="label">${label}</td><td class="colon">:</td><td class="val${bold?' bold':''}">${value}</td></tr>`;
+}
+
+/* ============ HALAMAN 1: SERTIFIKAT KALIBRASI ============ */
+function renderSertifikat(j, model){
+  const hasilText = j.hasil_akhir === 'LAIK' ? 'ALAT BAIK DAN LAIK PAKAI' : 'TIDAK LAIK PAKAI';
+  const managerMutu = model.manager_mutu_default || j.disahkan_oleh || '.......................';
+
+  return `
+  <div class="page">
+    <h1 class="title">SERTIFIKAT KALIBRASI<br><span class="en">Calibration Certificate</span></h1>
+    <div class="headrow">
+      <div>No Sertifikat : <b>${esc(j.no_sertifikat) || '-'}</b></div>
+      <div>No Order : <b>${esc(j.no_order)}</b></div>
+    </div>
+
+    <div class="sectiontitle">Identifikasi Alat</div>
+    <div class="sectionsub">Equipment Identification</div>
+    <table class="fields">
+      ${fieldRow(1, 'Nama Alat / Name of Equipment', esc(model.nama_alat_formal))}
+      ${fieldRow(2, 'Merk Pabrik / Manufacturer', esc(j.merk))}
+      ${fieldRow(3, 'Tipe / Model / Type / Model', esc(j.tipe_model_alat))}
+      ${fieldRow(4, 'No.Seri / Serial Number', esc(j.no_seri))}
+      ${fieldRow(5, 'Tanggal Penerimaan / Receipt Date', fmtTgl(j.tanggal_terima))}
+    </table>
+
+    <div class="sectiontitle">Identitas Pemilik</div>
+    <div class="sectionsub">Owner's Identity</div>
+    <table class="fields">
+      ${fieldRow(1, "Nama Pelanggan / Customer's Name", esc(j.nama_pelanggan))}
+      ${fieldRow(2, 'Alamat / Address', esc(j.alamat_pelanggan))}
+    </table>
+
+    <div class="sectiontitle">Pelaksanaan Kalibrasi</div>
+    <div class="sectionsub">Implementation of Calibration</div>
+    <table class="fields">
+      ${fieldRow(1, 'Tempat / Place', esc(model.tempat_kalibrasi_default))}
+      ${fieldRow(2, 'Ruangan / Room', esc(model.ruang_kalibrasi_default))}
+      ${fieldRow(3, 'Tanggal Kalibrasi / Cal Date', fmtTgl(j.tanggal_kalibrasi))}
+      ${fieldRow(4, 'Tanggal Berakhir / Cal Due Date', tglBerakhir(j.tanggal_kalibrasi))}
+      ${fieldRow(5, 'Metode / Method', esc(model.metode))}
+      ${fieldRow(6, 'Hasil Kalibrasi / Calibration Result', `<b>${hasilText}</b>`)}
+    </table>
+
+    <div class="signblock">
+      <div class="signbox">
+        <div>Surabaya, ${fmtTgl(j.tanggal_terbit_pdf || new Date())}</div>
+        <div>Menyetujui,</div>
+        <div class="bhs">Approved,</div>
+        <div class="space"></div>
+        <div><b>${esc(managerMutu)}</b></div>
+        <div>Manager Mutu</div>
+        <div class="bhs">Quality Manager</div>
+      </div>
+    </div>
+
+    <div class="footnote">
+      Sertifikat ini dilarang digandakan kecuali sepenuhnya tanpa persetujuan tertulis oleh Laboratorium Kalibrasi PT. Sinko Prima Alloy.<br>
+      This Certificate shall not reproduce except in full without written approval of PT. Sinko Prima Alloy Calibration Laboratory.
+    </div>
+  </div>`;
+}
+
+/* ============ HALAMAN 2: LAPORAN HASIL KALIBRASI ============ */
+function renderPerfTable(groupName, rows, satuan){
+  // rows: array hasil (dari Hasil_Kalkulasi) untuk 1 parameter_group, urut per titik
+  const subs = [...new Set(rows.map(r => r.sub_parameter))];
+  const isMulti = subs.length > 1;
+
+  if (!isMulti){
+    // Grup 1 sub-parameter (SpO2, HeartRate) -> tabel sederhana per titik
+    return `
+      <table class="perf">
+        <tr>
+          <th>No</th><th>Pembacaan Standar</th><th>Rata-rata Pembacaan Alat</th>
+          <th>Koreksi</th><th>Nilai Penyimpangan yang diizinkan</th><th>Ketidakpastian Pengukuran</th>
+        </tr>
+        <tr>
+          <th class="unit"></th><th class="unit">(${satuan})</th><th class="unit">(${satuan})</th>
+          <th class="unit">(${satuan})</th><th class="unit"></th><th class="unit">(${satuan})</th>
+        </tr>
+        ${rows.map((h,i) => `<tr>
+          <td>${i+1}</td><td>${h.nilai_setting}</td><td>${h.rata_rata_pembacaan}</td>
+          <td>${h.koreksi}</td><td>${h.nilai_penyimpangan_diizinkan}</td><td>${h.ketidakpastian_U}</td>
+        </tr>`).join('')}
+      </table>`;
+  }
+
+  // Grup >1 sub-parameter (NIBP: Systole/MAP/Diastole) -> No. dikelompokkan per titik
+  const nSub = subs.length;
+  let body = '';
+  for (let i = 0; i < rows.length; i += nSub){
+    const chunk = rows.slice(i, i + nSub);
+    chunk.forEach((h, k) => {
+      body += '<tr>';
+      if (k === 0) body += `<td rowspan="${nSub}">${(i/nSub)+1}</td>`;
+      body += `<td class="paramcol">${h.sub_parameter}</td>`;
+      body += `<td>${h.nilai_setting}</td><td>${h.rata_rata_pembacaan}</td>`;
+      body += `<td>${h.koreksi}</td><td>${h.nilai_penyimpangan_diizinkan}</td><td>${h.ketidakpastian_U}</td>`;
+      body += '</tr>';
+    });
+  }
+  return `
+    <table class="perf">
+      <tr>
+        <th>No.</th><th>Parameter</th><th>Setting Standar</th><th>Rata-Rata Pembacaan UUT</th>
+        <th>Koreksi</th><th>Nilai Penyimpangan yang diizinkan</th><th>Ketidakpastian Pengukuran</th>
+      </tr>
+      <tr>
+        <th class="unit"></th><th class="unit"></th><th class="unit">(${satuan})</th><th class="unit">(${satuan})</th>
+        <th class="unit">(${satuan})</th><th class="unit"></th><th class="unit">(${satuan})</th>
+      </tr>
+      ${body}
+    </table>`;
+}
+
+function renderLaporan(j, model, d){
+  const fisikBaik = d.fisik.length > 0 && d.fisik.every(f => f.fisik === 'Baik' && f.fungsi === 'Baik');
+
+  // Kelompokkan hasil per parameter_group, urutan sesuai kemunculan pertama
+  const groupOrder = [];
+  const groups = {};
+  d.hasil.forEach(h => {
+    if (!groups[h.parameter_group]) { groups[h.parameter_group] = []; groupOrder.push(h.parameter_group); }
+    groups[h.parameter_group].push(h);
+  });
+  const isMultiGroup = groupOrder.length > 1;
+  const letters = 'abcdefgh';
+
+  const perfHtml = groupOrder.map((g, i) => {
+    const rows = groups[g];
+    const satuan = (d.hasil.find(h => h.parameter_group === g) || {}).satuan || '';
+    const label = GROUP_LABEL[g] || g;
+    const heading = isMultiGroup
+      ? `<div class="subsec">${letters[i]}. ${label}${satuan ? ' (' + satuan + ')' : ''}</div>`
+      : '';
+    return heading + renderPerfTable(g, rows, satuan);
+  }).join('');
+
+  // Bagian V. Keterangan — urutan: catatan klasifikasi (kalau ada) -> ketidakpastian -> metode rujukan
+  const keteranganItems = [];
+  if (model.catatan_klasifikasi) keteranganItems.push(esc(model.catatan_klasifikasi));
+  keteranganItems.push('Hasil Ketidakpastian pengukuran disajikan mempunyai tingkat kepercayaan 95% dengan Faktor Cakupan (K)=2');
+  if (model.metode_rujukan_text) keteranganItems.push(esc(model.metode_rujukan_text));
+
+  const hasilText = j.hasil_akhir === 'LAIK' ? 'ALAT BAIK DAN LAIK PAKAI' : 'TIDAK LAIK PAKAI';
+
+  // Bagian VI. Alat yang Digunakan
+  const alatDigunakan = [model.alat_standar_1, model.alat_standar_2].filter(Boolean);
+
+  return `
+  <div class="page">
+    <h1 class="title">LAPORAN HASIL KALIBRASI</h1>
+    <div class="headrow"><div>No. Sertifikat : <b>${esc(j.no_sertifikat) || '-'}</b></div><div></div></div>
+
+    <div class="sectiontitle">I. Data Alat</div>
+    <table class="fields">
+      ${fieldRow(1, 'Nama Alat', esc(model.nama_alat_formal))}
+      ${fieldRow(2, 'Merek', esc(j.merk))}
+      ${fieldRow(3, 'Model/Tipe', esc(j.tipe_model_alat))}
+      ${fieldRow(4, 'No. Seri', esc(j.no_seri))}
+      ${fieldRow(5, 'Kelas Proteksi', `<b>${esc(model.kelas_proteksi_default)}</b>`)}
+      ${fieldRow(6, 'Tipe Applied Parts', `<b>${esc(model.tipe_applied_parts_default)}</b>`)}
+      ${fieldRow(7, 'Tanggal Kalibrasi', `<b>${fmtTgl(j.tanggal_kalibrasi)}</b>`)}
+    </table>
+
+    <div class="sectiontitle">II. Kondisi Lingkungan</div>
+    <table class="fields">
+      ${fieldRow(1, 'Suhu', `(${esc(j.suhu_awal)} - ${esc(j.suhu_akhir)}) °C`)}
+      ${fieldRow(2, 'Kelembapan', `(${esc(j.rh_awal)} - ${esc(j.rh_akhir)}) %RH`)}
+    </table>
+
+    <div class="sectiontitle">III. Pemeriksaan Kondisi Fisik dan Fungsi</div>
+    <table class="fields">
+      ${fieldRow(1, 'Fisik', fisikBaik ? 'Baik' : 'Tidak Baik')}
+      ${fieldRow(2, 'Fungsi', fisikBaik ? 'Baik' : 'Tidak Baik')}
+    </table>
+
+    <div class="sectiontitle">IV. Hasil Pengukuran Kinerja</div>
+    ${perfHtml}
+
+    <div class="sectiontitle">V. Keterangan</div>
+    <table class="fields">
+      ${keteranganItems.map((t,i) => fieldRow(i+1, '', t).replace('<td class="label"></td><td class="colon">:</td>', '<td class="label" style="width:8mm"></td><td class="colon"></td>')).join('')}
+    </table>
+    <table class="fields" style="margin-top:1mm">
+      <tr><td class="no">${keteranganItems.length+1}</td><td class="label" style="width:70mm">Hasil kalibrasi ${esc(model.nama_alat_formal)} dinyatakan,</td><td class="val bold">${hasilText}</td></tr>
+      <tr><td class="no">${keteranganItems.length+2}</td><td colspan="2" class="val">Hasil Kalibrasi diatas hanya untuk alat yang tertera pada Sertifikat ini</td></tr>
+    </table>
+
+    ${alatDigunakan.length ? `
+    <div class="sectiontitle">VI. Alat Yang Digunakan</div>
+    <table class="fields">
+      ${alatDigunakan.map((t,i) => `<tr><td class="no">${i+1}</td><td colspan="3" class="val">${esc(t)}</td></tr>`).join('')}
+    </table>` : ''}
+
+    <div class="diperiksa">
+      Diperiksa Oleh : <b>${esc(j.disahkan_oleh) || '.......................'}</b>
+    </div>
+
+    <div class="akhir">Akhir Sertifikat</div>
+
+    <div class="footnote">
+      Sertifikat ini dilarang digandakan kecuali sepenuhnya tanpa persetujuan tertulis oleh Laboratorium Kalibrasi PT. Sinko Prima Alloy.<br>
+      This Certificate shall not reproduce except in full without written approval of PT. Sinko Prima Alloy Calibration Laboratory.
+    </div>
+    <div class="tglbuat">tanggal pembuatan : ${fmtTgl(j.tanggal_terbit_pdf || new Date())}</div>
+  </div>`;
 }
 
 async function init(){
@@ -95,124 +335,19 @@ async function init(){
   const jobId = params.get('job_id');
   if (!jobId){ document.getElementById('content').innerHTML = '<p style="text-align:center;padding:40px">Parameter job_id tidak ada di URL.</p>'; return; }
 
-  const [d, cfg] = await Promise.all([
-    apiGet('jobDetail', { job_id: jobId }),
-    apiGet('config', { model_id: '' }) // diisi ulang setelah tahu model_id
-  ]);
+  let d;
+  try{ d = await apiGet('jobDetail', { job_id: jobId }); }
+  catch(err){ document.getElementById('content').innerHTML = '<p style="text-align:center;padding:40px">Tidak bisa terhubung ke server API.</p>'; return; }
   if (d.error){ document.getElementById('content').innerHTML = '<p style="text-align:center;padding:40px">' + d.error + '</p>'; return; }
   const j = d.job;
+
   const modelCfg = await apiGet('config', { model_id: j.model_id });
+  if (modelCfg.error || !modelCfg.model){ document.getElementById('content').innerHTML = '<p style="text-align:center;padding:40px">Config model tidak ditemukan untuk model_id: ' + j.model_id + '</p>'; return; }
   const model = modelCfg.model;
 
   document.getElementById('jobLabel').textContent = j.job_id + ' — ' + j.nama_pelanggan + ' (' + (j.no_sertifikat || 'belum terbit') + ')';
 
-  const fisikBaik = d.fisik.length > 0 && d.fisik.every(f => f.fisik === 'Baik' && f.fungsi === 'Baik');
-
-  // Kelompokkan hasil per parameter_group untuk tabel performa
-  const groups = {};
-  d.hasil.forEach(h => { if(!groups[h.parameter_group]) groups[h.parameter_group]=[]; groups[h.parameter_group].push(h); });
-
-  document.getElementById('content').innerHTML = `
-    <!-- ===================== HALAMAN 1: SERTIFIKAT KALIBRASI ===================== -->
-    <div class="page">
-      <h1 class="title">SERTIFIKAT KALIBRASI</h1>
-      <div class="headrow">
-        <div>No Sertifikat : <b>${j.no_sertifikat || '-'}</b></div>
-        <div>No Order : <b>${j.no_order}</b></div>
-      </div>
-
-      <div class="sectiontitle">Identifikasi Alat</div>
-      <table class="fields">
-        <tr><td class="no">1</td><td class="label">Nama Alat</td><td class="colon">:</td><td>${model.nama_alat_formal}</td></tr>
-        <tr><td class="no">2</td><td class="label">Merk Pabrik</td><td class="colon">:</td><td>${j.merk}</td></tr>
-        <tr><td class="no">3</td><td class="label">Tipe / Model</td><td class="colon">:</td><td>${j.tipe_model_alat}</td></tr>
-        <tr><td class="no">4</td><td class="label">No. Seri</td><td class="colon">:</td><td>${j.no_seri}</td></tr>
-        <tr><td class="no">5</td><td class="label">Tanggal Penerimaan</td><td class="colon">:</td><td>${fmtTgl(j.tanggal_terima)}</td></tr>
-      </table>
-
-      <div class="sectiontitle">Identitas Pemilik</div>
-      <table class="fields">
-        <tr><td class="no">1</td><td class="label">Nama Pelanggan</td><td class="colon">:</td><td>${j.nama_pelanggan}</td></tr>
-        <tr><td class="no">2</td><td class="label">Alamat</td><td class="colon">:</td><td>${j.alamat_pelanggan}</td></tr>
-      </table>
-
-      <div class="sectiontitle">Pelaksanaan Kalibrasi</div>
-      <table class="fields">
-        <tr><td class="no">1</td><td class="label">Tempat</td><td class="colon">:</td><td>${model.tempat_kalibrasi_default}</td></tr>
-        <tr><td class="no">2</td><td class="label">Ruangan</td><td class="colon">:</td><td>${model.ruang_kalibrasi_default}</td></tr>
-        <tr><td class="no">3</td><td class="label">Tanggal</td><td class="colon">:</td><td>${fmtTgl(j.tanggal_kalibrasi)}</td></tr>
-        <tr><td class="no">4</td><td class="label">Tanggal Berakhir</td><td class="colon">:</td><td>${tglBerakhir(j.tanggal_kalibrasi)}</td></tr>
-        <tr><td class="no">5</td><td class="label">Metode</td><td class="colon">:</td><td>${model.metode}</td></tr>
-        <tr><td class="no">6</td><td class="label">Hasil Kalibrasi</td><td class="colon">:</td><td><b>${j.hasil_akhir === 'LAIK' ? 'ALAT BAIK DAN LAIK PAKAI' : 'TIDAK LAIK PAKAI'}</b></td></tr>
-      </table>
-
-      <div class="signblock">
-        <div class="signbox">
-          <div>Surabaya, ${fmtTgl(j.tanggal_terbit_pdf || new Date())}</div>
-          <div>Menyetujui,</div>
-          <div class="space"></div>
-          <div><b>${j.disahkan_oleh || '.......................'}</b></div>
-          <div>Manager Mutu</div>
-        </div>
-      </div>
-
-      <div class="footnote">
-        Sertifikat ini dilarang digandakan kecuali sepenuhnya tanpa persetujuan tertulis oleh Laboratorium Kalibrasi PT. Sinko Prima Alloy.
-        This Certificate shall not reproduce except in full without written approval of PT. Sinko Prima Alloy Calibration Laboratory.
-      </div>
-    </div>
-
-    <!-- ===================== HALAMAN 2: LAPORAN HASIL KALIBRASI ===================== -->
-    <div class="page">
-      <h1 class="title">LAPORAN HASIL KALIBRASI</h1>
-      <div class="headrow"><div>No. Sertifikat : <b>${j.no_sertifikat || '-'}</b></div><div></div></div>
-
-      <div class="sectiontitle">I. Data Alat</div>
-      <table class="fields">
-        <tr><td class="no">1</td><td class="label">Nama Alat</td><td class="colon">:</td><td>${model.nama_alat_formal}</td></tr>
-        <tr><td class="no">2</td><td class="label">Merek</td><td class="colon">:</td><td>${j.merk}</td></tr>
-        <tr><td class="no">3</td><td class="label">Model/Tipe</td><td class="colon">:</td><td>${j.tipe_model_alat}</td></tr>
-        <tr><td class="no">4</td><td class="label">No. Seri</td><td class="colon">:</td><td>${j.no_seri}</td></tr>
-        <tr><td class="no">5</td><td class="label">Kelas Proteksi</td><td class="colon">:</td><td>${model.kelas_proteksi_default}</td></tr>
-        <tr><td class="no">6</td><td class="label">Tipe Applied Parts</td><td class="colon">:</td><td>${model.tipe_applied_parts_default}</td></tr>
-        <tr><td class="no">7</td><td class="label">Resolusi</td><td class="colon">:</td><td>${j.resolusi}</td></tr>
-        <tr><td class="no">8</td><td class="label">Tanggal Kalibrasi</td><td class="colon">:</td><td>${fmtTgl(j.tanggal_kalibrasi)}</td></tr>
-      </table>
-
-      <div class="sectiontitle">II. Kondisi Lingkungan</div>
-      <table class="fields">
-        <tr><td class="no">1</td><td class="label">Suhu</td><td class="colon">:</td><td>(${j.suhu_awal} - ${j.suhu_akhir}) °C</td></tr>
-        <tr><td class="no">2</td><td class="label">Kelembapan</td><td class="colon">:</td><td>(${j.rh_awal} - ${j.rh_akhir}) %RH</td></tr>
-      </table>
-
-      <div class="sectiontitle">III. Pemeriksaan Kondisi Fisik dan Fungsi</div>
-      <table class="fields">
-        <tr><td class="no">1</td><td class="label">Fisik</td><td class="colon">:</td><td>${fisikBaik ? 'Baik' : 'Tidak Baik'}</td></tr>
-        <tr><td class="no">2</td><td class="label">Fungsi</td><td class="colon">:</td><td>${fisikBaik ? 'Baik' : 'Tidak Baik'}</td></tr>
-      </table>
-
-      <div class="sectiontitle">IV. Hasil Pengukuran Kinerja</div>
-      ${Object.keys(groups).map(g => `
-        <div class="sectionsub">${g}</div>
-        <table class="perf">
-          <tr><th>No</th><th>Parameter</th><th>Setting Standar</th><th>Rata-rata Pembacaan</th><th>Koreksi</th><th>Nilai Penyimpangan Diizinkan</th><th>Ketidakpastian</th></tr>
-          ${groups[g].map((h,i) => `<tr>
-            <td>${i+1}</td><td class="paramcol">${h.sub_parameter}</td><td>${h.nilai_setting}</td>
-            <td>${h.rata_rata_pembacaan}</td><td>${h.koreksi}</td>
-            <td>${h.nilai_penyimpangan_diizinkan}</td><td>${h.ketidakpastian_U}</td>
-          </tr>`).join('')}
-        </table>
-      `).join('')}
-
-      <div class="sectiontitle">V. Keterangan</div>
-      <div class="footnote">
-        ${model.metode_rujukan_text}
-        ${model.catatan_klasifikasi ? '<br>' + model.catatan_klasifikasi : ''}
-        <br>Hasil kalibrasi di atas hanya untuk alat yang tertera pada Sertifikat ini.
-        <br><b>${j.hasil_akhir === 'LAIK' ? 'ALAT BAIK DAN LAIK PAKAI' : 'TIDAK LAIK PAKAI'}</b>
-      </div>
-    </div>
-  `;
+  document.getElementById('content').innerHTML = renderSertifikat(j, model) + renderLaporan(j, model, d);
 }
 init();
 </script>
