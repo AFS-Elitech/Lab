@@ -94,6 +94,16 @@
   #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);z-index:60;background:var(--ink);color:#fff;
     padding:13px 22px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .3s var(--ease)}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .loading-overlay{
+    position:fixed; inset:0; background:rgba(242,244,247,.85); backdrop-filter:blur(2px);
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px;
+    z-index:100; opacity:0; pointer-events:none; transition:opacity .25s var(--ease);
+  }
+  .loading-overlay.show{opacity:1; pointer-events:auto}
+  .spinner{width:44px; height:44px; border:4px solid var(--blue-tint); border-top-color:var(--blue-dark); border-radius:50%; animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-overlay span{font-size:13px; font-weight:700; color:var(--ink-soft)}
 </style>
 </head>
 <body>
@@ -120,6 +130,10 @@
 </main>
 
 <div id="toast"></div>
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <span id="loadingText">Memproses…</span>
+</div>
 
 <script>
 const API_BASE = 'https://script.google.com/macros/s/AKfycby-LcxnGqEaA203sl3pIEPMsG2X0PBZIWJYCEIaxd5EISGp2YirfkAe6Jr1t5oYUynAVQ/exec';
@@ -134,6 +148,12 @@ function toast(msg){
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2600);
 }
+
+function showLoading(text){
+  document.getElementById('loadingText').textContent = text || 'Memproses…';
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading(){ document.getElementById('loadingOverlay').classList.remove('show'); }
 
 async function apiGet(action, params){
   const qs = new URLSearchParams({ action, ...params }).toString();
@@ -214,6 +234,8 @@ async function openDetail(jobId){
       ${badgeFor(j)}
       <div class="kv">
         <div><b>Alamat</b>${j.alamat_pelanggan || '-'}</div>
+        <div><b>Email</b>${j.email_pelanggan || '-'}</div>
+        <div><b>No. HP</b>${j.no_hp_pelanggan || '-'}</div>
         <div><b>Merk / Tipe</b>${j.merk || '-'} / ${j.tipe_model_alat || '-'}</div>
         <div><b>No. Seri</b>${j.no_seri || '-'}</div>
         <div><b>Resolusi</b>${j.resolusi}</div>
@@ -296,8 +318,9 @@ async function openDetail(jobId){
   if (btnSahkan){
     btnSahkan.addEventListener('click', async () => {
       if (!namaInput.value){ toast('Isi nama Anda dulu di atas.'); return; }
-      toast('Menyimpan…');
+      showLoading('Menyahkan data…');
       const res = await apiPost({ action:'sahkanJob', job_id:jobId, disahkan_oleh:namaInput.value, catatan:document.getElementById('catatanVerif').value });
+      hideLoading();
       if (res.error){ toast('Gagal: ' + res.error); return; }
       toast('Job disahkan.');
       showList(); loadList(pillnav.querySelector('.pill.active').dataset.status);
@@ -308,8 +331,9 @@ async function openDetail(jobId){
       const catatan = document.getElementById('catatanVerif').value;
       if (!catatan){ toast('Catatan wajib diisi kalau mengembalikan job.'); return; }
       if (!namaInput.value){ toast('Isi nama Anda dulu di atas.'); return; }
-      toast('Menyimpan…');
+      showLoading('Mengembalikan ke operator…');
       const res = await apiPost({ action:'kembalikanJob', job_id:jobId, oleh:namaInput.value, catatan });
+      hideLoading();
       if (res.error){ toast('Gagal: ' + res.error); return; }
       toast('Job dikembalikan ke operator.');
       showList(); loadList(pillnav.querySelector('.pill.active').dataset.status);
@@ -318,8 +342,9 @@ async function openDetail(jobId){
   if (btnTerbitkan){
     btnTerbitkan.addEventListener('click', async () => {
       if (!namaInput.value){ toast('Isi nama Anda dulu di atas.'); return; }
-      toast('Menerbitkan…');
+      showLoading('Menerbitkan sertifikat…');
       const res = await apiPost({ action:'terbitkanSertifikat', job_id:jobId, oleh:namaInput.value });
+      hideLoading();
       if (res.error){ toast('Gagal: ' + res.error); return; }
       toast('Sertifikat terbit: ' + res.no_sertifikat);
       openDetail(jobId);
