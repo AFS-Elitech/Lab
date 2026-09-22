@@ -54,10 +54,10 @@
   table.fields td.val{}
   table.fields td.val.bold{font-weight:bold}
 
-  table.perf{width:100%; border-collapse:collapse; margin-top:1.5mm; font-size:8.6pt}
-  table.perf th, table.perf td{border:0.4pt solid #999; padding:1.3mm 1.6mm; text-align:center}
-  table.perf th{font-weight:bold; background:#f3f3f3; font-size:8pt}
-  table.perf th.unit{font-weight:normal; font-style:normal; background:#f8f8f8; font-size:7.5pt}
+  table.perf{width:100%; border-collapse:collapse; margin-top:1.5mm; font-size:9.5pt}
+  table.perf th, table.perf td{border:0.4pt solid #999; padding:1.6mm 1.8mm; text-align:center; vertical-align:middle}
+  table.perf th{font-weight:bold; background:#f3f3f3; font-size:8.5pt; line-height:1.25}
+  table.perf th.unit{font-weight:normal; font-style:normal; background:#f8f8f8; font-size:8pt}
   table.perf td.paramcol{text-align:center}
 
   .subsec{font-weight:bold; font-size:var(--font-size); margin:3mm 0 1mm}
@@ -72,6 +72,15 @@
   .footnote{margin-top:7mm; font-size:8pt; line-height:1.4; text-align:center}
   .akhir{font-weight:bold; font-size:var(--font-size); margin-top:8mm}
   .tglbuat{margin-top:5mm; font-size:8.5pt}
+
+  /* Footer tetap di tiap lembar: nomor halaman (tengah) + nomor dokumen (kanan, italic) —
+     posisinya absolut di dasar .page supaya konsisten, tidak ikut bahasa alir konten. */
+  .pagefooter{
+    position:absolute; left:var(--margin-left); right:var(--margin-right); bottom:6mm;
+    display:flex; justify-content:space-between; align-items:flex-end; font-size:8pt; color:#333;
+  }
+  .pagefooter .pageno{flex:1; text-align:center}
+  .pagefooter .docnum{font-style:italic; text-align:right; white-space:nowrap}
 
   @media print{
     body{background:#fff}
@@ -105,6 +114,19 @@ async function apiGet(action, params){
 }
 
 function esc(v){ return (v === null || v === undefined) ? '' : String(v); }
+
+/* Di sheet asli semua angka hasil (rata-rata, koreksi, ketidakpastian, suhu, RH)
+   diformat bulat 0 desimal — bukan karena sistem menghitungnya bulat, tapi
+   memang begitu cara tampilnya di sertifikat/laporan cetak. */
+function r0(v){
+  const n = Number(v);
+  if (v === '' || v === null || v === undefined || isNaN(n)) return esc(v);
+  return String(Math.round(n));
+}
+
+function noteRow(no, text){
+  return `<tr><td class="no">${no}</td><td colspan="3" class="val">${text}</td></tr>`;
+}
 
 function fmtTgl(d){
   if(!d) return '-';
@@ -180,6 +202,12 @@ function renderSertifikat(j, model){
       Sertifikat ini dilarang digandakan kecuali sepenuhnya tanpa persetujuan tertulis oleh Laboratorium Kalibrasi PT. Sinko Prima Alloy.<br>
       This Certificate shall not reproduce except in full without written approval of PT. Sinko Prima Alloy Calibration Laboratory.
     </div>
+
+    <div class="pagefooter">
+      <span></span>
+      <span class="pageno">Page 1 of 2</span>
+      <span class="docnum">Nomor Dokumen:SPA-FR/LAB-03PBK</span>
+    </div>
   </div>`;
 }
 
@@ -202,8 +230,8 @@ function renderPerfTable(groupName, rows, satuan){
           <th class="unit">(${satuan})</th><th class="unit"></th><th class="unit">(${satuan})</th>
         </tr>
         ${rows.map((h,i) => `<tr>
-          <td>${i+1}</td><td>${h.nilai_setting}</td><td>${h.rata_rata_pembacaan}</td>
-          <td>${h.koreksi}</td><td>${h.nilai_penyimpangan_diizinkan}</td><td>${h.ketidakpastian_U}</td>
+          <td>${i+1}</td><td>${h.nilai_setting}</td><td>${r0(h.rata_rata_pembacaan)}</td>
+          <td>${r0(h.koreksi)}</td><td>${h.nilai_penyimpangan_diizinkan}</td><td>${r0(h.ketidakpastian_U)}</td>
         </tr>`).join('')}
       </table>`;
   }
@@ -217,8 +245,8 @@ function renderPerfTable(groupName, rows, satuan){
       body += '<tr>';
       if (k === 0) body += `<td rowspan="${nSub}">${(i/nSub)+1}</td>`;
       body += `<td class="paramcol">${h.sub_parameter}</td>`;
-      body += `<td>${h.nilai_setting}</td><td>${h.rata_rata_pembacaan}</td>`;
-      body += `<td>${h.koreksi}</td><td>${h.nilai_penyimpangan_diizinkan}</td><td>${h.ketidakpastian_U}</td>`;
+      body += `<td>${h.nilai_setting}</td><td>${r0(h.rata_rata_pembacaan)}</td>`;
+      body += `<td>${r0(h.koreksi)}</td><td>${h.nilai_penyimpangan_diizinkan}</td><td>${r0(h.ketidakpastian_U)}</td>`;
       body += '</tr>';
     });
   }
@@ -288,8 +316,8 @@ function renderLaporan(j, model, d){
 
     <div class="sectiontitle">II. Kondisi Lingkungan</div>
     <table class="fields">
-      ${fieldRow(1, 'Suhu', `(${esc(j.suhu_awal)} - ${esc(j.suhu_akhir)}) °C`)}
-      ${fieldRow(2, 'Kelembapan', `(${esc(j.rh_awal)} - ${esc(j.rh_akhir)}) %RH`)}
+      ${fieldRow(1, 'Suhu', `(${r0(j.suhu_awal)} - ${r0(j.suhu_akhir)}) °C`)}
+      ${fieldRow(2, 'Kelembapan', `(${r0(j.rh_awal)} - ${r0(j.rh_akhir)}) %RH`)}
     </table>
 
     <div class="sectiontitle">III. Pemeriksaan Kondisi Fisik dan Fungsi</div>
@@ -303,17 +331,15 @@ function renderLaporan(j, model, d){
 
     <div class="sectiontitle">V. Keterangan</div>
     <table class="fields">
-      ${keteranganItems.map((t,i) => fieldRow(i+1, '', t).replace('<td class="label"></td><td class="colon">:</td>', '<td class="label" style="width:8mm"></td><td class="colon"></td>')).join('')}
-    </table>
-    <table class="fields" style="margin-top:1mm">
-      <tr><td class="no">${keteranganItems.length+1}</td><td class="label" style="width:70mm">Hasil kalibrasi ${esc(model.nama_alat_formal)} dinyatakan,</td><td class="val bold">${hasilText}</td></tr>
-      <tr><td class="no">${keteranganItems.length+2}</td><td colspan="2" class="val">Hasil Kalibrasi diatas hanya untuk alat yang tertera pada Sertifikat ini</td></tr>
+      ${keteranganItems.map((t,i) => noteRow(i+1, t)).join('')}
+      ${noteRow(keteranganItems.length+1, `Hasil kalibrasi ${esc(model.nama_alat_formal)} dinyatakan, <b>${hasilText}</b>`)}
+      ${noteRow(keteranganItems.length+2, 'Hasil Kalibrasi diatas hanya untuk alat yang tertera pada Sertifikat ini')}
     </table>
 
     ${alatDigunakan.length ? `
     <div class="sectiontitle">VI. Alat Yang Digunakan</div>
     <table class="fields">
-      ${alatDigunakan.map((t,i) => `<tr><td class="no">${i+1}</td><td colspan="3" class="val">${esc(t)}</td></tr>`).join('')}
+      ${alatDigunakan.map((t,i) => noteRow(i+1, esc(t))).join('')}
     </table>` : ''}
 
     <div class="diperiksa">
@@ -327,6 +353,12 @@ function renderLaporan(j, model, d){
       This Certificate shall not reproduce except in full without written approval of PT. Sinko Prima Alloy Calibration Laboratory.
     </div>
     <div class="tglbuat">tanggal pembuatan : ${fmtTgl(j.tanggal_terbit_pdf || new Date())}</div>
+
+    <div class="pagefooter">
+      <span></span>
+      <span class="pageno">Page 2 of 2</span>
+      <span class="docnum">Nomor Dokumen: SPA-FR/LAB-04PBK, Rev.01</span>
+    </div>
   </div>`;
 }
 
