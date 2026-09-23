@@ -5,17 +5,9 @@
 <title>Cetak Sertifikat</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
 <style>
-  /* ======================================================================
-     PENGATURAN KERTAS F4 PRE-PRINTED — GESER DI SINI KALAU HASIL CETAK MELESET
-     - Kertas sudah ada cetakan kop/logo/footer di printer Anda; sistem ini
-       HANYA mencetak teks. Kalau posisi meleset dari kop, ubah margin-top
-       (jarak dari atas kertas sampai mulai teks "SERTIFIKAT KALIBRASI").
-     - Selalu cek dengan print-preview / print 1 lembar percobaan dulu
-       sebelum cetak massal.
-     ====================================================================== */
   :root{
     --page-w: 215mm;
-    --page-h: 330mm;       /* F4 */
+    --page-h: 330mm;
     --margin-top: 30mm;
     --margin-left: 18mm;
     --margin-right: 15mm;
@@ -44,7 +36,6 @@
   .toolbar span{font-size:12px; opacity:.8}
   .toolbar .note{width:100%; text-align:center; font-size:11.5px; color:#ffd7a8; opacity:.95}
 
-  /* ---------- Loading overlay (konsisten dengan index.html / verifikator.html) ---------- */
   .loading-overlay{
     position:fixed; inset:0; background:rgba(242,244,247,.9); backdrop-filter:blur(2px);
     display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px;
@@ -58,7 +49,6 @@
   h1.title{font-size:15.5pt; font-weight:bold; text-align:center; margin:0 0 5mm; letter-spacing:.3px}
   h1.title .en{font-weight:normal; font-size:11.5pt}
 
-  /* No Sertifikat / No Order — dikelompokkan di tengah, bukan menempel ke tepi halaman */
   .headrow{display:flex; justify-content:center; gap:16mm; margin-bottom:6mm; font-size:9.5pt; flex-wrap:wrap}
 
   .sectiontitle{font-weight:bold; font-size:11.5pt; margin:6mm 0 0.5mm}
@@ -88,7 +78,6 @@
 
   .diperiksa{margin-top:10mm; font-size:var(--font-size)}
 
-  /* Garis ganda tebal pemisah, sebelum teks disclaimer */
   .dblrule{margin-top:6mm}
   .dblrule .r1, .dblrule .r2{border-top:1.6pt solid #000}
   .dblrule .r1{margin-bottom:1.1mm}
@@ -131,9 +120,6 @@
 
 <script>
 const API_BASE = 'https://script.google.com/macros/s/AKfycby-LcxnGqEaA203sl3pIEPMsG2X0PBZIWJYCEIaxd5EISGp2YirfkAe6Jr1t5oYUynAVQ/exec';
-
-/* Label ramah untuk tiap parameter_group, dipakai sebagai judul sub-bagian
-   (huruf a./b.) pada model yang punya lebih dari 1 grup pengukuran, mis. Oximeter. */
 const GROUP_LABEL = { SpO2: 'Saturasi Oksigen', HeartRate: 'Heart Rate', NIBP: 'Tekanan Darah (NIBP)' };
 
 async function apiGet(action, params){
@@ -143,23 +129,18 @@ async function apiGet(action, params){
 }
 
 function esc(v){ return (v === null || v === undefined) ? '' : String(v); }
-
-/* Di sheet asli semua angka hasil (rata-rata, koreksi, ketidakpastian, suhu, RH)
-   diformat bulat 0 desimal. */
 function r0(v){
   const n = Number(v);
   if (v === '' || v === null || v === undefined || isNaN(n)) return esc(v);
   return String(Math.round(n));
 }
-function r0n(v){ // versi angka murni (untuk excel)
+function r0n(v){
   const n = Number(v);
   return isNaN(n) ? esc(v) : Math.round(n);
 }
-
 function noteRow(no, text){
   return `<tr><td class="no">${no}</td><td colspan="3" class="val">${text}</td></tr>`;
 }
-
 function fmtTgl(d){
   if(!d) return '-';
   const dt = new Date(d);
@@ -172,24 +153,19 @@ function tglBerakhir(d){
   dt.setDate(dt.getDate()+365);
   return fmtTgl(dt);
 }
-
 function fieldRow(no, label, value, bold){
   return `<tr><td class="no">${no}</td><td class="label">${label}</td><td class="colon">:</td><td class="val${bold?' bold':''}">${value}</td></tr>`;
 }
-/* Baris bilingual: label Indonesia BOLD, label Inggris REGULAR (sesuai format asli) */
 function fieldRowBi(no, idLabel, enLabel, value){
   return `<tr><td class="no">${no}</td><td class="label2"><b>${idLabel}</b> / ${enLabel}</td><td class="colon">:</td><td class="val">${value}</td></tr>`;
 }
-
 function dblRuleHtml(){
   return `<div class="dblrule"><div class="r1"></div><div class="r2"></div></div>`;
 }
 
-/* ============ HALAMAN 1: SERTIFIKAT KALIBRASI ============ */
 function renderSertifikat(j, model){
   const hasilText = j.hasil_akhir === 'LAIK' ? 'ALAT BAIK DAN LAIK PAKAI' : 'TIDAK LAIK PAKAI';
   const managerMutu = model.manager_mutu_default || j.disahkan_oleh || '.......................';
-
   return `
   <div class="page">
     <h1 class="title">SERTIFIKAT KALIBRASI<br><span class="en">Calibration Certificate</span></h1>
@@ -252,11 +228,9 @@ function renderSertifikat(j, model){
   </div>`;
 }
 
-/* ============ HALAMAN 2: LAPORAN HASIL KALIBRASI ============ */
 function renderPerfTable(groupName, rows, satuan){
   const subs = [...new Set(rows.map(r => r.sub_parameter))];
   const isMulti = subs.length > 1;
-
   if (!isMulti){
     return `
       <table class="perf">
@@ -274,7 +248,6 @@ function renderPerfTable(groupName, rows, satuan){
         </tr>`).join('')}
       </table>`;
   }
-
   const nSub = subs.length;
   let body = '';
   for (let i = 0; i < rows.length; i += nSub){
@@ -317,7 +290,6 @@ function renderLaporan(j, model, d){
   const { groupOrder, groups } = groupHasil(d);
   const isMultiGroup = groupOrder.length > 1;
   const letters = 'abcdefgh';
-
   const perfHtml = groupOrder.map((g, i) => {
     const rows = groups[g];
     const satuan = (d.hasil.find(h => h.parameter_group === g) || {}).satuan || '';
@@ -435,7 +407,7 @@ function merge(ws, r1,c1,r2,c2){
   if(!ws['!merges']) ws['!merges']=[];
   ws['!merges'].push({ s:{r:r1,c:c1}, e:{r:r2,c:c2} });
 }
-const NCOL = 8; // A..H — dipakai konsisten di seluruh sheet
+const NCOL = 8;
 
 function rowLabelBi(ws, r, no, idLabel, enLabel, value, sVal){
   put(ws, r, 0, no, S.no);
@@ -652,12 +624,40 @@ function buildLaporanSheet(j, model, d){
   return ws;
 }
 
+/* ============ PENGATURAN HALAMAN CETAK — margin, paper size, print area ============ */
+function applyPrintSetup(ws){
+  // Margin dalam INCI (satuan yang dipakai SheetJS) — dibuat rapat karena konten padat di 1 halaman
+  ws['!margins'] = { left:0.35, right:0.3, top:0.4, bottom:0.3, header:0.2, footer:0.2 };
+  // paperSize 14 = Folio (215.9 x 330.2mm) — kode kertas Excel standar paling dekat dengan F4
+  ws['!pageSetup'] = { paperSize: 14, orientation: 'portrait', fitToWidth: 1, fitToHeight: 1, scale: 100 };
+  ws['!fitToPage'] = true;
+  return ws['!ref'];
+}
+
 function downloadExcel(j, model, d){
   const wb = XLSX.utils.book_new();
   const ws1 = buildSertifikatSheet(j, model);
   const ws2 = buildLaporanSheet(j, model, d);
+
+  const ref1 = applyPrintSetup(ws1);
+  const ref2 = applyPrintSetup(ws2);
+
   XLSX.utils.book_append_sheet(wb, ws1, 'SERTIFIKAT');
   XLSX.utils.book_append_sheet(wb, ws2, 'Laporan Hasil Kalibrasi');
+
+  wb.Workbook = wb.Workbook || {};
+  wb.Workbook.Names = wb.Workbook.Names || [];
+  const range1 = XLSX.utils.decode_range(ref1);
+  const range2 = XLSX.utils.decode_range(ref2);
+  wb.Workbook.Names.push({
+    Sheet: 0, Name: '_xlnm.Print_Area',
+    Ref: `'SERTIFIKAT'!$A$1:$${XLSX.utils.encode_col(range1.e.c)}$${range1.e.r + 1}`
+  });
+  wb.Workbook.Names.push({
+    Sheet: 1, Name: '_xlnm.Print_Area',
+    Ref: `'Laporan Hasil Kalibrasi'!$A$1:$${XLSX.utils.encode_col(range2.e.c)}$${range2.e.r + 1}`
+  });
+
   XLSX.writeFile(wb, 'Sertifikat_' + j.job_id + '.xlsx');
 }
 
