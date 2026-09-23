@@ -250,6 +250,10 @@
     opacity:0; pointer-events:none; transition:all .3s var(--ease);
   }
   #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  .mt-cell input.input-warn, .meas-card input.input-warn{
+  border-color:var(--red); background:var(--red-tint); color:var(--red); font-weight:800;
+}
 </style>
 </head>
 <body>
@@ -342,6 +346,7 @@ const FISIK_ITEMS = [
   'Tampilan dan indikator',
   'Kelengkapan alat'
 ];
+const DEVIASI_MAKS = { SpO2: 10, HeartRate: 10, NIBP: 10 }; // ubah sesuai kebutuhan tiap parameter
 
 const MODEL_LABEL = { PO: 'Oximeter', BPM: 'Tensimeter' };
 
@@ -569,7 +574,7 @@ function renderMeasBlock(modelId, group, params){
             return `
             <div class="meas-card">
               <div class="mc-setting num">${cfg.nilai_setting}<small>${cfg.satuan}</small></div>
-              <input type="number" step="1" data-input-sub="${sub}" data-input-titik="${t}" data-input-group="${group}">
+              <input type="number" step="1" data-input-sub="${sub}" data-input-titik="${t}" data-input-group="${group}" data-setting="${cfg.nilai_setting}">
               <div class="mc-avg num" data-avg-sub="${sub}" data-avg-titik="${t}">–</div>
             </div>`;
           }).join('')}
@@ -597,7 +602,7 @@ function renderMeasBlock(modelId, group, params){
               return `
               <div class="mt-cell">
                 <div class="mt-setting num">${cfg.nilai_setting}<small>${cfg.satuan}</small></div>
-                <input type="number" step="0.1" data-input-sub="${sub}" data-input-titik="${t}" data-input-group="${group}">
+                <input type="number" step="1" data-input-sub="${sub}" data-input-titik="${t}" data-input-group="${group}" data-setting="${cfg.nilai_setting}">
                 <div class="mt-avg num" data-avg-sub="${sub}" data-avg-titik="${t}">–</div>
               </div>`;
             }).join('')}
@@ -639,12 +644,20 @@ function bindFormEvents(modelId, groups){
     });
   }
 
-  // Input pengukuran -> simpan ke state + update rata-rata
+  // Input pengukuran -> simpan ke state + cek deviasi + update rata-rata
   root.querySelectorAll('[data-input-group]').forEach(inp => {
     inp.addEventListener('input', () => {
       const g = inp.dataset.inputGroup, sub = inp.dataset.inputSub, titik = inp.dataset.inputTitik;
       const idx = state.activeTab;
       state.data[g][sub][titik][idx] = inp.value;
+
+      // cek deviasi terhadap nilai setting — highlight kalau kelewat jauh
+      const setting = Number(inp.dataset.setting);
+      const val = Number(inp.value);
+      const maks = DEVIASI_MAKS[g] ?? 10;
+      const menyimpang = inp.value !== '' && !isNaN(val) && Math.abs(val - setting) > maks;
+      inp.classList.toggle('input-warn', menyimpang);
+
       const arr = state.data[g][sub][titik].filter(v => v !== '').map(Number);
       const avgEl = root.querySelector(`[data-avg-sub="${sub}"][data-avg-titik="${titik}"]`);
       avgEl.textContent = arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2) : '–';
@@ -655,7 +668,6 @@ function bindFormEvents(modelId, groups){
   root.querySelector(`[data-cancel="${modelId}"]`).addEventListener('click', () => showView('beranda'));
   root.querySelector(`[data-save="${modelId}"]`).addEventListener('click', () => submitForm(modelId, groups));
 }
-
 async function submitForm(modelId, groups){
   const g = id => document.getElementById(modelId + '_' + id);
   const root = document.getElementById(modelId === 'PO' ? 'view-oximeter' : 'view-tensi');
@@ -682,6 +694,10 @@ async function submitForm(modelId, groups){
   if (belumLengkap){ toast('Masih ada titik ukur yang belum lengkap diisi.'); return; }
   if (!g('nama_pelanggan').value){ toast('Nama pelanggan wajib diisi.'); return; }
   if (!namaOperatorInput.value){ toast('Isi Nama Anda (operator) dulu di atas.'); return; }
+  if (root.querySelector('.input-warn')){
+  const lanjut = confirm('Ada nilai pembacaan yang selisihnya lebih dari ' + Object.values(DEVIASI_MAKS).join('/') + ' dari nilai setting standar — kemungkinan salah input. Tetap simpan?');
+  if (!lanjut) return;
+}
 
   const up = v => (v || '').toUpperCase();
 
