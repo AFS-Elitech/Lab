@@ -121,7 +121,8 @@
 <script>
 const API_BASE = 'https://script.google.com/macros/s/AKfycby-LcxnGqEaA203sl3pIEPMsG2X0PBZIWJYCEIaxd5EISGp2YirfkAe6Jr1t5oYUynAVQ/exec';
 const GROUP_LABEL = { SpO2: 'Saturasi Oksigen', HeartRate: 'Heart Rate', NIBP: 'Tekanan Darah (NIBP)' };
-
+const GROUP_LABEL = { SpO2: 'Saturasi Oksigen', HeartRate: 'Heart Rate', NIBP: 'Tekanan Darah (NIBP)' };
+const GROUP_SATUAN = { SpO2: '%O2', HeartRate: 'BPM', NIBP: 'mmHg' };  // ← tambahkan ini
 async function apiGet(action, params){
   const qs = new URLSearchParams({ action, ...params }).toString();
   const res = await fetch(API_BASE + '?' + qs);
@@ -292,7 +293,7 @@ function renderLaporan(j, model, d){
   const letters = 'abcdefgh';
   const perfHtml = groupOrder.map((g, i) => {
     const rows = groups[g];
-    const satuan = (d.hasil.find(h => h.parameter_group === g) || {}).satuan || '';
+    const satuan = (d.hasil.find(h => h.parameter_group === g) || {}).satuan || GROUP_SATUAN[g] || '';
     const label = GROUP_LABEL[g] || g;
     const heading = isMultiGroup
       ? `<div class="subsec">${letters[i]}. ${label}${satuan ? ' (' + satuan + ')' : ''}</div>`
@@ -571,7 +572,7 @@ function buildLaporanSheet(j, model, d){
   const letters = 'abcdefgh';
   groupOrder.forEach((g, i) => {
     const rows = groups[g];
-    const satuan = (d.hasil.find(h => h.parameter_group === g) || {}).satuan || '';
+    const satuan = (d.hasil.find(h => h.parameter_group === g) || {}).satuan || GROUP_SATUAN[g] || '';
     const isMulti = [...new Set(rows.map(x=>x.sub_parameter))].length > 1;
     if (isMultiGroup){
       const label = GROUP_LABEL[g] || g;
