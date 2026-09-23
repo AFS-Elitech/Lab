@@ -121,7 +121,6 @@
 <script>
 const API_BASE = 'https://script.google.com/macros/s/AKfycby-LcxnGqEaA203sl3pIEPMsG2X0PBZIWJYCEIaxd5EISGp2YirfkAe6Jr1t5oYUynAVQ/exec';
 const GROUP_LABEL = { SpO2: 'Saturasi Oksigen', HeartRate: 'Heart Rate', NIBP: 'Tekanan Darah (NIBP)' };
-const GROUP_LABEL = { SpO2: 'Saturasi Oksigen', HeartRate: 'Heart Rate', NIBP: 'Tekanan Darah (NIBP)' };
 const GROUP_SATUAN = { SpO2: '%O2', HeartRate: 'BPM', NIBP: 'mmHg' };  // ← tambahkan ini
 async function apiGet(action, params){
   const qs = new URLSearchParams({ action, ...params }).toString();
