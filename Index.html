@@ -569,7 +569,7 @@ function renderMeasBlock(modelId, group, params){
             return `
             <div class="meas-card">
               <div class="mc-setting num">${cfg.nilai_setting}<small>${cfg.satuan}</small></div>
-              <input type="number" step="0.1" data-input-sub="${sub}" data-input-titik="${t}" data-input-group="${group}">
+              <input type="number" step="1" data-input-sub="${sub}" data-input-titik="${t}" data-input-group="${group}">
               <div class="mc-avg num" data-avg-sub="${sub}" data-avg-titik="${t}">–</div>
             </div>`;
           }).join('')}
