@@ -665,7 +665,11 @@ function downloadExcel(j, model, d){
 }
 
 async function downloadPdf(){
-  showLoading('Membuat PDF…');
+  const overlay = document.getElementById('loadingOverlay');
+  const loadingText = overlay.querySelector('span');
+  if (loadingText) loadingText.textContent = 'Membuat PDF…';
+  overlay.classList.remove('hide');
+
   try{
     const { jsPDF } = window.jspdf;
     const pages = document.querySelectorAll('#content .page');
@@ -679,7 +683,7 @@ async function downloadPdf(){
     }
     pdf.save('Sertifikat_' + CURRENT.j.job_id + '.pdf');
   } finally {
-    hideLoading();
+    overlay.classList.add('hide');
   }
 }
   
