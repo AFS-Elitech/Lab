@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <title>Cetak Sertifikat</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --page-w: 215mm;
@@ -108,6 +110,7 @@
   <span id="jobLabel">Memuat…</span>
   <button id="btnPrint" disabled>🖨️ Cetak</button>
   <button id="btnExcel" disabled>⬇️ Unduh Excel</button>
+  <button id="btnPdf" disabled>📄 Unduh PDF (F4)</button>
   <div class="note" id="statusNote" style="display:none"></div>
 </div>
 
@@ -661,6 +664,25 @@ function downloadExcel(j, model, d){
   XLSX.writeFile(wb, 'Sertifikat_' + j.job_id + '.xlsx');
 }
 
+async function downloadPdf(){
+  showLoading('Membuat PDF…');
+  try{
+    const { jsPDF } = window.jspdf;
+    const pages = document.querySelectorAll('#content .page');
+    const pdf = new jsPDF({ unit: 'mm', format: [215, 330], orientation: 'portrait' });
+
+    for (let i = 0; i < pages.length; i++){
+      const canvas = await html2canvas(pages[i], { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      if (i > 0) pdf.addPage([215, 330], 'portrait');
+      pdf.addImage(imgData, 'JPEG', 0, 0, 215, 330);
+    }
+    pdf.save('Sertifikat_' + CURRENT.j.job_id + '.pdf');
+  } finally {
+    hideLoading();
+  }
+}
+  
 /* ============ INIT ============ */
 let CURRENT = null;
 
@@ -668,6 +690,7 @@ async function init(){
   const params = new URLSearchParams(location.search);
   const jobId = params.get('job_id');
   const overlay = document.getElementById('loadingOverlay');
+  const btnPdf = document.getElementById('btnPdf');   // ← tambah baris ini di dekat btnPrint/btnExcel
 
   if (!jobId){
     overlay.classList.add('hide');
@@ -711,14 +734,17 @@ async function init(){
   if (sudahTerbit){
     btnPrint.disabled = false;
     btnExcel.disabled = false;
+    btnPdf.disabled = false;
     note.style.display = 'none';
   } else {
     btnPrint.disabled = true;
     btnExcel.disabled = true;
+    btnPdf.disabled = true;
     note.style.display = 'block';
     note.textContent = 'Sertifikat belum terbit (status: ' + j.status + ') — cetak & unduh Excel dinonaktifkan sampai diterbitkan lewat halaman Verifikasi.';
   }
-
+  
+  btnPdf.addEventListener('click', downloadPdf);
   btnPrint.addEventListener('click', () => window.print());
   btnExcel.addEventListener('click', () => {
     if (!CURRENT) return;
