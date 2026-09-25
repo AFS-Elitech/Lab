@@ -156,14 +156,15 @@ function noteRow(no, text){
   return `<tr><td class="no">${no}</td><td colspan="3" class="val">${text}</td></tr>`;
 }
 function fmtTgl(d){
-  if(!d) return '-';
+  if(!d || d === 0 || d === '0') return '-';
   const dt = new Date(d);
-  if (isNaN(dt)) return '-';
+  if (isNaN(dt.getTime()) || dt.getFullYear() < 1971) return '-';
   return dt.toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
 }
 function tglBerakhir(d){
-  if(!d) return '-';
-  const dt = new Date(d); if (isNaN(dt)) return '-';
+  if(!d || d === 0 || d === '0') return '-';
+  const dt = new Date(d);
+  if (isNaN(dt.getTime()) || dt.getFullYear() < 1971) return '-';
   dt.setDate(dt.getDate()+365);
   return fmtTgl(dt);
 }
@@ -246,6 +247,7 @@ function renderSertifikat(j, model){
 function renderPerfTable(groupName, rows, satuan){
   const subs = [...new Set(rows.map(r => r.sub_parameter))];
   const isMulti = subs.length > 1;
+  const toleransi = (rows.find(r => r.nilai_penyimpangan_diizinkan) || {}).nilai_penyimpangan_diizinkan || '';
   if (!isMulti){
     return `
       <table class="perf">
@@ -259,12 +261,14 @@ function renderPerfTable(groupName, rows, satuan){
         </tr>
         ${rows.map((h,i) => `<tr>
           <td>${i+1}</td><td>${h.nilai_setting}</td><td>${r0(h.rata_rata_pembacaan)}</td>
-          <td>${r0(h.koreksi)}</td><td>${h.nilai_penyimpangan_diizinkan}</td><td>${r0(h.ketidakpastian_U)}</td>
+          <td>${r0(h.koreksi)}</td>${i===0 ? `<td rowspan="${rows.length}">${toleransi}</td>` : ''}<td>${r0(h.ketidakpastian_U)}</td>
         </tr>`).join('')}
       </table>`;
   }
   const nSub = subs.length;
+  const totalRows = rows.length;
   let body = '';
+  let firstTol = true;
   for (let i = 0; i < rows.length; i += nSub){
     const chunk = rows.slice(i, i + nSub);
     chunk.forEach((h, k) => {
@@ -272,7 +276,9 @@ function renderPerfTable(groupName, rows, satuan){
       if (k === 0) body += `<td rowspan="${nSub}">${(i/nSub)+1}</td>`;
       body += `<td class="paramcol">${h.sub_parameter}</td>`;
       body += `<td>${h.nilai_setting}</td><td>${r0(h.rata_rata_pembacaan)}</td>`;
-      body += `<td>${r0(h.koreksi)}</td><td>${h.nilai_penyimpangan_diizinkan}</td><td>${r0(h.ketidakpastian_U)}</td>`;
+      body += `<td>${r0(h.koreksi)}</td>`;
+      if (firstTol){ body += `<td rowspan="${totalRows}">${toleransi}</td>`; firstTol = false; }
+      body += `<td>${r0(h.ketidakpastian_U)}</td>`;
       body += '</tr>';
     });
   }
@@ -512,6 +518,7 @@ function buildSertifikatSheet(j, model){
 }
 
 function perfRowsToAoa(ws, r, rows, satuan, multi){
+  const toleransi = (rows.find(x => x.nilai_penyimpangan_diizinkan) || {}).nilai_penyimpangan_diizinkan || '';
   if (!multi){
     put(ws,r,0,'No',S.th); put(ws,r,1,'Pembacaan Standar',S.th); merge(ws,r,1,r,2);
     put(ws,r,3,'Rata-rata Pembacaan Alat',S.th); merge(ws,r,3,r,4);
@@ -521,12 +528,15 @@ function perfRowsToAoa(ws, r, rows, satuan, multi){
     put(ws,r,3,'('+satuan+')',S.thUnit); merge(ws,r,3,r,4);
     put(ws,r,5,'('+satuan+')',S.thUnit); put(ws,r,6,'',S.thUnit); put(ws,r,7,'('+satuan+')',S.thUnit);
     r++;
+    const startDataR = r;
     rows.forEach((h,i) => {
       put(ws,r,0,i+1,S.td); put(ws,r,1,h.nilai_setting,S.td); merge(ws,r,1,r,2);
       put(ws,r,3,r0n(h.rata_rata_pembacaan),S.td); merge(ws,r,3,r,4);
-      put(ws,r,5,r0n(h.koreksi),S.td); put(ws,r,6,esc(h.nilai_penyimpangan_diizinkan),S.td); put(ws,r,7,r0n(h.ketidakpastian_U),S.td);
+      put(ws,r,5,r0n(h.koreksi),S.td); put(ws,r,7,r0n(h.ketidakpastian_U),S.td);
       r++;
     });
+    put(ws,startDataR,6,esc(toleransi),S.td);
+    if (rows.length>1) merge(ws,startDataR,6,startDataR+rows.length-1,6);
     return r;
   }
   const subs = [...new Set(rows.map(x => x.sub_parameter))];
@@ -541,6 +551,7 @@ function perfRowsToAoa(ws, r, rows, satuan, multi){
   put(ws,r,5,'',S.thUnit); merge(ws,r,5,r,6);
   put(ws,r,7,'('+satuan+')',S.thUnit);
   r++;
+  const startDataR = r;
   for (let i=0; i<rows.length; i+=nSub){
     const chunk = rows.slice(i, i+nSub);
     const startR = r;
@@ -549,13 +560,14 @@ function perfRowsToAoa(ws, r, rows, satuan, multi){
       put(ws,r,2,h.nilai_setting,S.td);
       put(ws,r,3,r0n(h.rata_rata_pembacaan),S.td);
       put(ws,r,4,r0n(h.koreksi),S.td);
-      put(ws,r,5,esc(h.nilai_penyimpangan_diizinkan),S.td); merge(ws,r,5,r,6);
       put(ws,r,7,r0n(h.ketidakpastian_U),S.td);
       r++;
     });
     put(ws,startR,0,(i/nSub)+1,S.td);
     if (nSub>1) merge(ws,startR,0,startR+nSub-1,0);
   }
+  put(ws,startDataR,5,esc(toleransi),S.td);
+  merge(ws,startDataR,5,startDataR+rows.length-1,6);
   return r;
 }
 
