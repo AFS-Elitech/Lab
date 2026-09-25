@@ -26,14 +26,30 @@
   .page-sertifikat{ padding: 26mm 5mm 1mm 5mm; }   /* top 1.02362in, left/right 0.19685in, bottom 0.03937in */
   .page-laporan{ padding: 30mm 8mm 14mm 8mm; }     /* top 1.18110in, left/right 0.31496in, bottom 0.55118in */
 
-  /* Pita bertitik (meniru pola fill "gray0625" di Excel) — tampil sebagai baris pertama tiap halaman */
-  .dotband{
+  /* Pita bertitik (meniru pola fill "gray0625" di Excel) — judul & subjudul tampil DI DALAM pita ini */
+  .titleband{
     width:100%;
     background-image: radial-gradient(circle, #888 0.5px, transparent 0.5px);
     background-size: 3.2px 3.2px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center;
   }
-  .dotband-sertifikat{ height:14.3mm; margin-bottom:4mm; }
-  .dotband-laporan{ height:8.8mm; margin-bottom:3mm; }
+  .titleband .tb-main{ font-weight:bold; letter-spacing:.3px; }
+  .titleband .tb-sub{ font-weight:normal; font-style:italic; margin-top:1mm; }
+  .titleband-sertifikat{ height:14.3mm; margin-bottom:5mm; }
+  .titleband-sertifikat .tb-main{ font-size:15.5pt; }
+  .titleband-sertifikat .tb-sub{ font-size:11.5pt; }
+  .titleband-laporan{ height:8.8mm; margin-bottom:5mm; }
+  .titleband-laporan .tb-main{ font-size:14pt; }
+
+  /* No Sertifikat / No Order — dua baris terpisah dengan indentasi berjenjang, persis posisi kolom di master */
+  .certno{ font-size:9.5pt; font-style:italic; margin:0 0 2mm; }
+  .certno b{ font-style:normal; font-weight:normal; }
+  .certno-1{ padding-left:24%; margin-top:0; }
+  .certno-2{ padding-left:69%; margin-bottom:6mm; }
+
+  /* No. Sertifikat di halaman Laporan — satu baris, center */
+  .headrow-laporan{ text-align:center; font-size:9.5pt; margin-bottom:5mm; }
 
   .toolbar{
     position:sticky; top:0; background:#1c2333; color:#fff; padding:10px 16px; display:flex; gap:10px; align-items:center;
@@ -67,8 +83,9 @@
   table.fields{width:100%; border-collapse:collapse; margin-bottom:1mm}
   table.fields td{padding:1.1mm 2mm; vertical-align:top; font-size:var(--font-size)}
   table.fields td.no{width:6mm; text-align:right}
-  table.fields td.label{width:66mm; font-weight:bold}
+  table.fields td.label{width:50mm; font-weight:normal}
   table.fields td.label2{width:66mm; font-weight:normal}
+  table.fields td.label2 i{font-style:italic}
   table.fields td.colon{width:4mm; font-weight:bold}
   table.fields td.val{}
   table.fields td.val.bold{font-weight:bold}
@@ -156,15 +173,14 @@ function noteRow(no, text){
   return `<tr><td class="no">${no}</td><td colspan="3" class="val">${text}</td></tr>`;
 }
 function fmtTgl(d){
-  if(!d || d === 0 || d === '0') return '-';
+  if(!d) return '-';
   const dt = new Date(d);
-  if (isNaN(dt.getTime()) || dt.getFullYear() < 1971) return '-';
+  if (isNaN(dt)) return '-';
   return dt.toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' });
 }
 function tglBerakhir(d){
-  if(!d || d === 0 || d === '0') return '-';
-  const dt = new Date(d);
-  if (isNaN(dt.getTime()) || dt.getFullYear() < 1971) return '-';
+  if(!d) return '-';
+  const dt = new Date(d); if (isNaN(dt)) return '-';
   dt.setDate(dt.getDate()+365);
   return fmtTgl(dt);
 }
@@ -172,7 +188,7 @@ function fieldRow(no, label, value, bold){
   return `<tr><td class="no">${no}</td><td class="label">${label}</td><td class="colon">:</td><td class="val${bold?' bold':''}">${value}</td></tr>`;
 }
 function fieldRowBi(no, idLabel, enLabel, value){
-  return `<tr><td class="no">${no}</td><td class="label2"><b>${idLabel}</b> / ${enLabel}</td><td class="colon">:</td><td class="val">${value}</td></tr>`;
+  return `<tr><td class="no">${no}</td><td class="label2"><b>${idLabel}</b> / <i>${enLabel}</i></td><td class="colon">:</td><td class="val">${value}</td></tr>`;
 }
 function dblRuleHtml(){
   return `<div class="dblrule"><div class="r1"></div><div class="r2"></div></div>`;
@@ -247,7 +263,6 @@ function renderSertifikat(j, model){
 function renderPerfTable(groupName, rows, satuan){
   const subs = [...new Set(rows.map(r => r.sub_parameter))];
   const isMulti = subs.length > 1;
-  const toleransi = (rows.find(r => r.nilai_penyimpangan_diizinkan) || {}).nilai_penyimpangan_diizinkan || '';
   if (!isMulti){
     return `
       <table class="perf">
@@ -261,14 +276,12 @@ function renderPerfTable(groupName, rows, satuan){
         </tr>
         ${rows.map((h,i) => `<tr>
           <td>${i+1}</td><td>${h.nilai_setting}</td><td>${r0(h.rata_rata_pembacaan)}</td>
-          <td>${r0(h.koreksi)}</td>${i===0 ? `<td rowspan="${rows.length}">${toleransi}</td>` : ''}<td>${r0(h.ketidakpastian_U)}</td>
+          <td>${r0(h.koreksi)}</td><td>${h.nilai_penyimpangan_diizinkan}</td><td>${r0(h.ketidakpastian_U)}</td>
         </tr>`).join('')}
       </table>`;
   }
   const nSub = subs.length;
-  const totalRows = rows.length;
   let body = '';
-  let firstTol = true;
   for (let i = 0; i < rows.length; i += nSub){
     const chunk = rows.slice(i, i + nSub);
     chunk.forEach((h, k) => {
@@ -276,9 +289,7 @@ function renderPerfTable(groupName, rows, satuan){
       if (k === 0) body += `<td rowspan="${nSub}">${(i/nSub)+1}</td>`;
       body += `<td class="paramcol">${h.sub_parameter}</td>`;
       body += `<td>${h.nilai_setting}</td><td>${r0(h.rata_rata_pembacaan)}</td>`;
-      body += `<td>${r0(h.koreksi)}</td>`;
-      if (firstTol){ body += `<td rowspan="${totalRows}">${toleransi}</td>`; firstTol = false; }
-      body += `<td>${r0(h.ketidakpastian_U)}</td>`;
+      body += `<td>${r0(h.koreksi)}</td><td>${h.nilai_penyimpangan_diizinkan}</td><td>${r0(h.ketidakpastian_U)}</td>`;
       body += '</tr>';
     });
   }
@@ -369,7 +380,7 @@ function renderLaporan(j, model, d){
     </table>
 
     ${alatDigunakan.length ? `
-    <div class="sectiontitle">VI. Alat Yang Digunakan</div>
+    <div class="sectiontitle">VII. Alat Yang Digunakan</div>
     <table class="fields">
       ${alatDigunakan.map((t,i) => noteRow(i+1, esc(t))).join('')}
     </table>` : ''}
@@ -518,7 +529,6 @@ function buildSertifikatSheet(j, model){
 }
 
 function perfRowsToAoa(ws, r, rows, satuan, multi){
-  const toleransi = (rows.find(x => x.nilai_penyimpangan_diizinkan) || {}).nilai_penyimpangan_diizinkan || '';
   if (!multi){
     put(ws,r,0,'No',S.th); put(ws,r,1,'Pembacaan Standar',S.th); merge(ws,r,1,r,2);
     put(ws,r,3,'Rata-rata Pembacaan Alat',S.th); merge(ws,r,3,r,4);
@@ -528,15 +538,12 @@ function perfRowsToAoa(ws, r, rows, satuan, multi){
     put(ws,r,3,'('+satuan+')',S.thUnit); merge(ws,r,3,r,4);
     put(ws,r,5,'('+satuan+')',S.thUnit); put(ws,r,6,'',S.thUnit); put(ws,r,7,'('+satuan+')',S.thUnit);
     r++;
-    const startDataR = r;
     rows.forEach((h,i) => {
       put(ws,r,0,i+1,S.td); put(ws,r,1,h.nilai_setting,S.td); merge(ws,r,1,r,2);
       put(ws,r,3,r0n(h.rata_rata_pembacaan),S.td); merge(ws,r,3,r,4);
-      put(ws,r,5,r0n(h.koreksi),S.td); put(ws,r,7,r0n(h.ketidakpastian_U),S.td);
+      put(ws,r,5,r0n(h.koreksi),S.td); put(ws,r,6,esc(h.nilai_penyimpangan_diizinkan),S.td); put(ws,r,7,r0n(h.ketidakpastian_U),S.td);
       r++;
     });
-    put(ws,startDataR,6,esc(toleransi),S.td);
-    if (rows.length>1) merge(ws,startDataR,6,startDataR+rows.length-1,6);
     return r;
   }
   const subs = [...new Set(rows.map(x => x.sub_parameter))];
@@ -551,7 +558,6 @@ function perfRowsToAoa(ws, r, rows, satuan, multi){
   put(ws,r,5,'',S.thUnit); merge(ws,r,5,r,6);
   put(ws,r,7,'('+satuan+')',S.thUnit);
   r++;
-  const startDataR = r;
   for (let i=0; i<rows.length; i+=nSub){
     const chunk = rows.slice(i, i+nSub);
     const startR = r;
@@ -560,14 +566,13 @@ function perfRowsToAoa(ws, r, rows, satuan, multi){
       put(ws,r,2,h.nilai_setting,S.td);
       put(ws,r,3,r0n(h.rata_rata_pembacaan),S.td);
       put(ws,r,4,r0n(h.koreksi),S.td);
+      put(ws,r,5,esc(h.nilai_penyimpangan_diizinkan),S.td); merge(ws,r,5,r,6);
       put(ws,r,7,r0n(h.ketidakpastian_U),S.td);
       r++;
     });
     put(ws,startR,0,(i/nSub)+1,S.td);
     if (nSub>1) merge(ws,startR,0,startR+nSub-1,0);
   }
-  put(ws,startDataR,5,esc(toleransi),S.td);
-  merge(ws,startDataR,5,startDataR+rows.length-1,6);
   return r;
 }
 
@@ -627,7 +632,7 @@ function buildLaporanSheet(j, model, d){
 
   const alatDigunakan = [model.alat_standar_1, model.alat_standar_2].filter(Boolean);
   if (alatDigunakan.length){
-    sectionTitle(ws, r, 'VI. Alat Yang Digunakan'); r++;
+    sectionTitle(ws, r, 'VII. Alat Yang Digunakan'); r++;
     alatDigunakan.forEach((t,i) => { rowNote(ws, r++, i+1, esc(t)); });
     r++;
   }
