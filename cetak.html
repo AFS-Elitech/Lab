@@ -4,14 +4,16 @@
 <meta charset="UTF-8">
 <title>Cetak Sertifikat</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
-    --page-w: 210mm;
-    --page-h: 297mm;
+    --page-w: 215mm;
+    --page-h: 330mm;
+    --margin-top: 28mm;
+    --margin-left: 17mm;
+    --margin-right: 17mm;
+    --margin-bottom: 12mm;
     --font-size: 10.5pt;
-    --line-h: 1.35;
+    --line-h: 1.22;
     --font-serif: 'Times New Roman', Times, 'Liberation Serif', serif;
     --blue:#3b77d7; --blue-tint:#e9f0fb; --ink:#1c2333; --ink-soft:#6d7688; --line:#e6e9ef;
   }
@@ -19,38 +21,10 @@
   body{margin:0; background:#ccc; font-family:Arial, Helvetica, sans-serif; font-size:var(--font-size); line-height:var(--line-h); color:#111}
   .page{
     width:var(--page-w); min-height:var(--page-h); background:#fff; margin:16px auto;
+    padding:var(--margin-top) var(--margin-right) var(--margin-bottom) var(--margin-left);
     box-shadow:0 4px 16px rgba(0,0,0,.25); position:relative;
     font-family:var(--font-serif);
   }
-  /* Margin per jenis halaman — persis dari file Excel master (dikonversi dari inci) */
-  .page-sertifikat{ padding: 26mm 5mm 1mm 5mm; }   /* top 1.02362in, left/right 0.19685in, bottom 0.03937in */
-  .page-laporan{ padding: 30mm 8mm 14mm 8mm; }     /* top 1.18110in, left/right 0.31496in, bottom 0.55118in */
-
-  /* Pita bertitik (meniru pola fill "gray0625" di Excel) — judul & subjudul tampil DI DALAM pita ini */
-  .titleband{
-    width:100%;
-    background-image: radial-gradient(circle, #888 0.5px, transparent 0.5px);
-    background-size: 3.2px 3.2px;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center;
-  }
-  .titleband .tb-main{ font-weight:bold; letter-spacing:.3px; }
-  .titleband .tb-sub{ font-weight:normal; font-style:italic; margin-top:1mm; }
-  .titleband-sertifikat{ height:14.3mm; margin-bottom:5mm; }
-  .titleband-sertifikat .tb-main{ font-size:15.5pt; }
-  .titleband-sertifikat .tb-sub{ font-size:11.5pt; }
-  .titleband-laporan{ height:8.8mm; margin-bottom:5mm; }
-  .titleband-laporan .tb-main{ font-size:14pt; }
-
-  /* No Sertifikat / No Order — dua baris terpisah dengan indentasi berjenjang, persis posisi kolom di master */
-  .certno{ font-size:9.5pt; font-style:italic; margin:0 0 2mm; }
-  .certno b{ font-style:normal; font-weight:normal; }
-  .certno-1{ padding-left:24%; margin-top:0; }
-  .certno-2{ padding-left:69%; margin-bottom:6mm; }
-
-  /* No. Sertifikat di halaman Laporan — satu baris, center */
-  .headrow-laporan{ text-align:center; font-size:9.5pt; margin-bottom:5mm; }
-
   .toolbar{
     position:sticky; top:0; background:#1c2333; color:#fff; padding:10px 16px; display:flex; gap:10px; align-items:center;
     justify-content:center; flex-wrap:wrap; z-index:10; font-family:Arial,sans-serif;
@@ -72,20 +46,25 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   .loading-overlay span{font-size:13px; font-weight:700; color:var(--ink-soft)}
 
+  .topband{
+    position:absolute; top:0; left:0; right:0; height:9mm;
+    background:linear-gradient(90deg,#eef1ea,#e6ebe4,#eef1ea);
+  }
+
   h1.title{font-size:15.5pt; font-weight:bold; text-align:center; margin:0 0 5mm; letter-spacing:.3px}
-  h1.title .en{font-weight:normal; font-size:11.5pt}
+  h1.title .en{font-weight:normal; font-size:11.5pt; font-style:italic}
 
-  .headrow{display:flex; justify-content:center; gap:16mm; margin-bottom:6mm; font-size:9.5pt; flex-wrap:wrap}
+  .headrow-split{display:flex; justify-content:space-between; margin-bottom:4mm; font-size:9.5pt}
+  .headrow-right{display:flex; justify-content:flex-end; margin-bottom:4mm; font-size:9.5pt}
 
-  .sectiontitle{font-weight:bold; font-size:11.5pt; margin:6mm 0 0.5mm}
-  .sectionsub{font-size:8.5pt; font-style:italic; margin-bottom:3mm; color:#333}
+  .sectiontitle{font-weight:bold; font-size:11.5pt; margin:4mm 0 0.5mm}
+  .sectionsub{font-size:8.5pt; font-style:italic; margin-bottom:1.8mm; color:#333}
 
   table.fields{width:100%; border-collapse:collapse; margin-bottom:1mm}
-  table.fields td{padding:1.1mm 2mm; vertical-align:top; font-size:var(--font-size)}
+  table.fields td{padding:0.7mm 2mm; vertical-align:top; font-size:var(--font-size)}
   table.fields td.no{width:6mm; text-align:right}
-  table.fields td.label{width:50mm; font-weight:normal}
+  table.fields td.label{width:66mm; font-weight:normal}
   table.fields td.label2{width:66mm; font-weight:normal}
-  table.fields td.label2 i{font-style:italic}
   table.fields td.colon{width:4mm; font-weight:bold}
   table.fields td.val{}
   table.fields td.val.bold{font-weight:bold}
@@ -98,14 +77,14 @@
 
   .subsec{font-weight:bold; font-size:var(--font-size); margin:3mm 0 1mm}
 
-  .signblock{margin-top:12mm; display:flex; justify-content:flex-end}
+  .signblock{margin-top:8mm; display:flex; justify-content:flex-end}
   .signbox{text-align:center; width:60mm; font-size:var(--font-size)}
-  .signbox .space{height:18mm}
+  .signbox .space{height:14mm}
   .signbox .bhs{font-style:italic; font-size:9pt}
 
-  .diperiksa{margin-top:10mm; font-size:var(--font-size)}
+  .diperiksa{margin-top:6mm; font-size:var(--font-size)}
 
-  .dblrule{margin-top:6mm}
+  .dblrule{margin-top:4mm}
   .dblrule .r1, .dblrule .r2{border-top:1.6pt solid #000}
   .dblrule .r1{margin-bottom:1.1mm}
 
@@ -114,11 +93,9 @@
   .tglbuat{margin-top:5mm; font-size:8.5pt}
 
   .pagefooter{
-    position:absolute; left:0; right:0; bottom:6mm;
+    position:absolute; left:var(--margin-left); right:var(--margin-right); bottom:6mm;
     display:flex; justify-content:space-between; align-items:flex-end; font-size:8pt; color:#333;
-    padding:0 5mm;
   }
-  .page-laporan .pagefooter{ padding:0 8mm; }
   .pagefooter .pageno{flex:1; text-align:center}
   .pagefooter .docnum{font-style:italic; text-align:right; white-space:nowrap}
 
@@ -127,7 +104,7 @@
     .toolbar, .loading-overlay{display:none}
     .page{box-shadow:none; margin:0; page-break-after:always}
     .page:last-child{page-break-after:auto}
-    @page{ size: A4; margin:0; }
+    @page{ size: var(--page-w) var(--page-h); margin:0; }
   }
 </style>
 </head>
@@ -137,7 +114,6 @@
   <span id="jobLabel">Memuat…</span>
   <button id="btnPrint" disabled>🖨️ Cetak</button>
   <button id="btnExcel" disabled>⬇️ Unduh Excel</button>
-  <button id="btnPdf" disabled>📄 Unduh PDF</button>
   <div class="note" id="statusNote" style="display:none"></div>
 </div>
 
@@ -151,7 +127,6 @@
 <script>
 const API_BASE = 'https://script.google.com/macros/s/AKfycby-LcxnGqEaA203sl3pIEPMsG2X0PBZIWJYCEIaxd5EISGp2YirfkAe6Jr1t5oYUynAVQ/exec';
 const GROUP_LABEL = { SpO2: 'Saturasi Oksigen', HeartRate: 'Heart Rate', NIBP: 'Tekanan Darah (NIBP)' };
-const GROUP_SATUAN = { SpO2: '%O2', HeartRate: 'BPM', NIBP: 'mmHg' };
 
 async function apiGet(action, params){
   const qs = new URLSearchParams({ action, ...params }).toString();
@@ -188,7 +163,7 @@ function fieldRow(no, label, value, bold){
   return `<tr><td class="no">${no}</td><td class="label">${label}</td><td class="colon">:</td><td class="val${bold?' bold':''}">${value}</td></tr>`;
 }
 function fieldRowBi(no, idLabel, enLabel, value){
-  return `<tr><td class="no">${no}</td><td class="label2"><b>${idLabel}</b> / <i>${enLabel}</i></td><td class="colon">:</td><td class="val">${value}</td></tr>`;
+  return `<tr><td class="no">${no}</td><td class="label2"><b>${idLabel}</b> <i style="font-size:8.5pt">/ ${enLabel}</i></td><td class="colon">:</td><td class="val">${value}</td></tr>`;
 }
 function dblRuleHtml(){
   return `<div class="dblrule"><div class="r1"></div><div class="r2"></div></div>`;
@@ -198,12 +173,15 @@ function renderSertifikat(j, model){
   const hasilText = j.hasil_akhir === 'LAIK' ? 'ALAT BAIK DAN LAIK PAKAI' : 'TIDAK LAIK PAKAI';
   const managerMutu = model.manager_mutu_default || j.disahkan_oleh || '.......................';
   return `
-  <div class="page page-sertifikat">
-    <div class="dotband dotband-sertifikat"></div>
+  <div class="page">
+    <div class="topband"></div>
     <h1 class="title">SERTIFIKAT KALIBRASI<br><span class="en">Calibration Certificate</span></h1>
-    <div class="headrow">
-      <div>No Sertifikat : <b>${esc(j.no_sertifikat) || '-'}</b></div>
-      <div>No Order : <b>${esc(j.no_order)}</b></div>
+    <div class="headrow-split">
+      <div>No Sertifikat&nbsp;&nbsp;&nbsp;<b>${esc(j.no_sertifikat) || '-'}</b></div>
+      <div></div>
+    </div>
+    <div class="headrow-right">
+      <div>No Order&nbsp;&nbsp;&nbsp;<b>${esc(j.no_order)}</b></div>
     </div>
 
     <div class="sectiontitle">Identifikasi Alat</div>
@@ -324,7 +302,7 @@ function renderLaporan(j, model, d){
   const letters = 'abcdefgh';
   const perfHtml = groupOrder.map((g, i) => {
     const rows = groups[g];
-    const satuan = (d.hasil.find(h => h.parameter_group === g) || {}).satuan || GROUP_SATUAN[g] || '';
+    const satuan = (d.hasil.find(h => h.parameter_group === g) || {}).satuan || '';
     const label = GROUP_LABEL[g] || g;
     const heading = isMultiGroup
       ? `<div class="subsec">${letters[i]}. ${label}${satuan ? ' (' + satuan + ')' : ''}</div>`
@@ -341,10 +319,10 @@ function renderLaporan(j, model, d){
   const alatDigunakan = [model.alat_standar_1, model.alat_standar_2].filter(Boolean);
 
   return `
-  <div class="page page-laporan">
-    <div class="dotband dotband-laporan"></div>
-    <h1 class="title">LAPORAN HASIL KALIBRASI</h1>
-    <div class="headrow"><div>No. Sertifikat : <b>${esc(j.no_sertifikat) || '-'}</b></div></div>
+  <div class="page">
+    <div class="topband"></div>
+    <h1 class="title">Laporan Hasil Kalibrasi</h1>
+    <div class="headrow-right"><div>No. Sertifikat&nbsp;&nbsp;&nbsp;<b>${esc(j.no_sertifikat) || '-'}</b></div></div>
 
     <div class="sectiontitle">I. Data Alat</div>
     <table class="fields">
@@ -380,7 +358,7 @@ function renderLaporan(j, model, d){
     </table>
 
     ${alatDigunakan.length ? `
-    <div class="sectiontitle">VII. Alat Yang Digunakan</div>
+    <div class="sectiontitle">VI. Alat Yang Digunakan</div>
     <table class="fields">
       ${alatDigunakan.map((t,i) => noteRow(i+1, esc(t))).join('')}
     </table>` : ''}
@@ -430,8 +408,7 @@ const S = {
   signB:      { font:{ ...FS, bold:true, sz:10.5 }, alignment:{ horizontal:'center' } },
   signI:      { font:{ ...FS, italic:true, sz:9 }, alignment:{ horizontal:'center' } },
   footnote:   { font:{ ...FS, sz:8 }, alignment:{ horizontal:'center', wrapText:true } },
-  docfoot:    { font:{ ...FS, italic:true, sz:8 }, alignment:{ horizontal:'right' } },
-  dotband:    { fill:{ patternType:'gray0625', fgColor:{ rgb:'000000' } } }
+  docfoot:    { font:{ ...FS, italic:true, sz:8 }, alignment:{ horizontal:'right' } }
 };
 
 function put(ws, r, c, v, s){
@@ -471,7 +448,6 @@ function sectionSub(ws, r, text){
 function buildSertifikatSheet(j, model){
   const ws = {};
   let r = 0;
-  put(ws, r, 0, '', S.dotband); merge(ws, r,0, r,NCOL-1); r++;
   put(ws, r, 0, 'SERTIFIKAT KALIBRASI', S.title); merge(ws, r,0, r,NCOL-1); r++;
   put(ws, r, 0, 'Calibration Certificate', S.titleEn); merge(ws, r,0, r,NCOL-1); r+=2;
 
@@ -579,7 +555,6 @@ function perfRowsToAoa(ws, r, rows, satuan, multi){
 function buildLaporanSheet(j, model, d){
   const ws = {};
   let r = 0;
-  put(ws, r, 0, '', S.dotband); merge(ws, r,0, r,NCOL-1); r++;
   put(ws, r, 0, 'LAPORAN HASIL KALIBRASI', S.title); merge(ws, r,0, r,NCOL-1); r+=2;
   put(ws, r, 5, 'No. Sertifikat : ' + (esc(j.no_sertifikat) || '-'), S.head); merge(ws, r,5, r,7); r+=2;
 
@@ -607,7 +582,7 @@ function buildLaporanSheet(j, model, d){
   const letters = 'abcdefgh';
   groupOrder.forEach((g, i) => {
     const rows = groups[g];
-    const satuan = (d.hasil.find(h => h.parameter_group === g) || {}).satuan || GROUP_SATUAN[g] || '';
+    const satuan = (d.hasil.find(h => h.parameter_group === g) || {}).satuan || '';
     const isMulti = [...new Set(rows.map(x=>x.sub_parameter))].length > 1;
     if (isMultiGroup){
       const label = GROUP_LABEL[g] || g;
@@ -632,7 +607,7 @@ function buildLaporanSheet(j, model, d){
 
   const alatDigunakan = [model.alat_standar_1, model.alat_standar_2].filter(Boolean);
   if (alatDigunakan.length){
-    sectionTitle(ws, r, 'VII. Alat Yang Digunakan'); r++;
+    sectionTitle(ws, r, 'VI. Alat Yang Digunakan'); r++;
     alatDigunakan.forEach((t,i) => { rowNote(ws, r++, i+1, esc(t)); });
     r++;
   }
@@ -660,12 +635,12 @@ function buildLaporanSheet(j, model, d){
   return ws;
 }
 
-/* ============ PENGATURAN HALAMAN CETAK — margin, paper size (A4), print area ============ */
-function applyPrintSetup(ws, margins){
-  // Margin dalam INCI (satuan yang dipakai SheetJS) — persis dari file Excel master
-  ws['!margins'] = margins;
-  // paperSize 9 = A4 (kode kertas standar Excel)
-  ws['!pageSetup'] = { paperSize: 9, orientation: 'portrait', fitToWidth: 1, fitToHeight: 1, scale: 100 };
+/* ============ PENGATURAN HALAMAN CETAK — margin, paper size, print area ============ */
+function applyPrintSetup(ws){
+  // Margin dalam INCI (satuan yang dipakai SheetJS) — dibuat rapat karena konten padat di 1 halaman
+  ws['!margins'] = { left:0.35, right:0.3, top:0.4, bottom:0.3, header:0.2, footer:0.2 };
+  // paperSize 14 = Folio (215.9 x 330.2mm) — kode kertas Excel standar paling dekat dengan F4
+  ws['!pageSetup'] = { paperSize: 14, orientation: 'portrait', fitToWidth: 1, fitToHeight: 1, scale: 100 };
   ws['!fitToPage'] = true;
   return ws['!ref'];
 }
@@ -675,23 +650,8 @@ function downloadExcel(j, model, d){
   const ws1 = buildSertifikatSheet(j, model);
   const ws2 = buildLaporanSheet(j, model, d);
 
-  // Margin persis dari sheet SERTIFIKAT & Laporan Hasil Kalibrasi Rev.01 di file master
-  const ref1 = applyPrintSetup(ws1, {
-    left: 0.196850393700787,
-    right: 0.196850393700787,
-    top: 1.02362204724409,
-    bottom: 0.0393700787401575,
-    header: 0.31496062992126,
-    footer: 0.31496062992126
-  });
-  const ref2 = applyPrintSetup(ws2, {
-    left: 0.31496062992126,
-    right: 0.31496062992126,
-    top: 1.18110236220472,
-    bottom: 0.551181102362205,
-    header: 0,
-    footer: 0.0393700787401575
-  });
+  const ref1 = applyPrintSetup(ws1);
+  const ref2 = applyPrintSetup(ws2);
 
   XLSX.utils.book_append_sheet(wb, ws1, 'SERTIFIKAT');
   XLSX.utils.book_append_sheet(wb, ws2, 'Laporan Hasil Kalibrasi');
@@ -712,30 +672,6 @@ function downloadExcel(j, model, d){
   XLSX.writeFile(wb, 'Sertifikat_' + j.job_id + '.xlsx');
 }
 
-/* ============ EXPORT PDF (html2canvas + jsPDF) — A4 ============ */
-async function downloadPdf(){
-  const overlay = document.getElementById('loadingOverlay');
-  const loadingText = overlay.querySelector('span');
-  if (loadingText) loadingText.textContent = 'Membuat PDF…';
-  overlay.classList.remove('hide');
-
-  try{
-    const { jsPDF } = window.jspdf;
-    const pages = document.querySelectorAll('#content .page');
-    const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-
-    for (let i = 0; i < pages.length; i++){
-      const canvas = await html2canvas(pages[i], { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      if (i > 0) pdf.addPage('a4', 'portrait');
-      pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-    }
-    pdf.save('Sertifikat_' + CURRENT.j.job_id + '.pdf');
-  } finally {
-    overlay.classList.add('hide');
-  }
-}
-
 /* ============ INIT ============ */
 let CURRENT = null;
 
@@ -743,7 +679,6 @@ async function init(){
   const params = new URLSearchParams(location.search);
   const jobId = params.get('job_id');
   const overlay = document.getElementById('loadingOverlay');
-  const btnPdf = document.getElementById('btnPdf');
 
   if (!jobId){
     overlay.classList.add('hide');
@@ -787,17 +722,14 @@ async function init(){
   if (sudahTerbit){
     btnPrint.disabled = false;
     btnExcel.disabled = false;
-    btnPdf.disabled = false;
     note.style.display = 'none';
   } else {
     btnPrint.disabled = true;
     btnExcel.disabled = true;
-    btnPdf.disabled = true;
     note.style.display = 'block';
     note.textContent = 'Sertifikat belum terbit (status: ' + j.status + ') — cetak & unduh Excel dinonaktifkan sampai diterbitkan lewat halaman Verifikasi.';
   }
 
-  btnPdf.addEventListener('click', downloadPdf);
   btnPrint.addEventListener('click', () => window.print());
   btnExcel.addEventListener('click', () => {
     if (!CURRENT) return;
